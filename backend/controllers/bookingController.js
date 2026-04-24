@@ -50,11 +50,54 @@ exports.updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    const validStatuses = ['pending', 'accepted', 'in-progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status value' });
+    }
+
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-    // Validate permission to update status based on role and current status here
-    // For simplicity, just updating it:
+    const userId = req.user._id.toString();
+    const isTasker = booking.taskerId.toString() === userId;
+    const isCustomer = booking.customerId.toString() === userId;
+
+    // Tasker workflow: pending -> accepted -> in-progress -> completed
+    if (req.user.role === 'tasker') {
+      if (!isTasker) {
+        return res.status(403).json({ success: false, message: 'Only assigned tasker can update this booking' });
+      }
+
+      const taskerTransitions = {
+        pending: ['accepted', 'cancelled'],
+        accepted: ['in-progress', 'cancelled'],
+        'in-progress': ['completed', 'cancelled'],
+        completed: [],
+        cancelled: []
+      };
+
+      if (status !== booking.status && !taskerTransitions[booking.status].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status transition: ${booking.status} -> ${status}`
+        });
+      }
+    } else if (req.user.role === 'customer') {
+      // Customer can only cancel own booking before completion
+      if (!isCustomer) {
+        return res.status(403).json({ success: false, message: 'Only booking owner can update this booking' });
+      }
+      const canCancel = ['pending', 'accepted', 'in-progress'].includes(booking.status);
+      if (status !== 'cancelled' || !canCancel) {
+        return res.status(403).json({
+          success: false,
+          message: 'Customers can only cancel active bookings'
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to update booking status' });
+    }
+
     booking.status = status;
     await booking.save();
 

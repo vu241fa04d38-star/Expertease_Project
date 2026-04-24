@@ -29,25 +29,47 @@ const Track = () => {
   const [showChat, setShowChat] = useState(false);
   const [routePath, setRoutePath] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
+  const shouldShowRoute = ['accepted', 'in-progress'].includes(booking?.status);
 
   useEffect(() => {
     const locStr = sessionStorage.getItem('userLocation');
     if (locStr) {
       try { setLocation(JSON.parse(locStr)); } catch(e) {}
     }
-    // Fetch booking details to pass to chat
+  }, []);
+
+  useEffect(() => {
     const token = localStorage.getItem('token');
-    axios.get(`${import.meta.env.VITE_API_URL}/api/bookings` , { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => {
+    if (!token) return;
+
+    const fetchBooking = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/bookings` , {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (res.data.success) {
           const found = res.data.bookings.find(b => b._id === id);
-          if (found) setBooking(found);
+          if (found) {
+            setBooking(found);
+          }
         }
-      })
-      .catch(console.error);
+      } catch (err) {
+        console.error('Failed to fetch booking details', err);
+      }
+    };
+
+    fetchBooking();
+    const interval = setInterval(fetchBooking, 5000);
+    return () => clearInterval(interval);
   }, [id]);
 
   useEffect(() => {
+    if (!shouldShowRoute) {
+      setRoutePath(null);
+      setRouteInfo(null);
+      return;
+    }
+
     if (booking && booking.taskerId && booking.taskerId.location && booking.taskerId.location.coordinates) {
       const custLat = booking.location?.lat || location.lat;
       const custLng = booking.location?.lng || location.lng;
@@ -74,7 +96,7 @@ const Track = () => {
         })
         .catch(console.error);
     }
-  }, [booking, location]);
+  }, [booking, location, shouldShowRoute]);
 
   return (
     <div className="space-y-6">
@@ -102,13 +124,19 @@ const Track = () => {
             <div>
               <h3 className="font-bold">
                 {booking?.status === 'pending' ? 'Waiting for Tasker' :
+                 booking?.status === 'accepted' ? 'Tasker Assigned' :
+                 booking?.status === 'in-progress' ? 'Tasker Is Working' :
                  booking?.status === 'completed' ? 'Service Completed!' :
-                 'Tasker is assigned!'}
+                 booking?.status === 'cancelled' ? 'Booking Cancelled' :
+                 'Tracking Booking'}
               </h3>
               <p className="text-sm font-medium mt-1 opacity-90">
                 {booking?.status === 'pending' ? 'Your request has been sent and is awaiting acceptance.' :
+                 booking?.status === 'accepted' ? 'Tasker accepted your booking and is on the way.' :
+                 booking?.status === 'in-progress' ? 'Tasker reached your location and started the service.' :
                  booking?.status === 'completed' ? 'Thank you for using ExpertEase.' :
-                 'Your tasker has been notified and is currently getting ready.'}
+                 booking?.status === 'cancelled' ? 'This booking was cancelled.' :
+                 'Tracking is active.'}
               </p>
             </div>
           </div>
@@ -125,14 +153,16 @@ const Track = () => {
                 <div className={`absolute -left-6 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${['accepted', 'in-progress', 'completed'].includes(booking?.status) ? 'bg-amber-500' : 'bg-slate-200'}`}></div>
                 <h5 className="font-bold text-slate-900">Tasker Assigned</h5>
                 <p className="text-xs font-medium text-slate-500">
-                  {booking?.status === 'pending' ? 'Waiting for tasker to accept' : 'Tasker has accepted'}
+                  {booking?.status === 'pending' ? 'Waiting for tasker to accept' : 'Tasker accepted your booking'}
                 </p>
               </div>
               <div className={`relative ${['in-progress', 'completed'].includes(booking?.status) ? '' : 'opacity-40'}`}>
                 <div className={`absolute -left-6 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${['in-progress', 'completed'].includes(booking?.status) ? 'bg-blue-500' : 'bg-slate-200'}`}></div>
                 <h5 className="font-bold text-slate-900">On the Way / Working</h5>
                 <p className="text-xs font-medium text-slate-500">
-                  {booking?.status === 'in-progress' ? 'Tasker is on site' : 'Waiting for tasker'}
+                  {booking?.status === 'in-progress' ? 'Tasker is on site and working' :
+                   booking?.status === 'completed' ? 'Work phase completed' :
+                   'Waiting for tasker'}
                 </p>
               </div>
               <div className={`relative ${['completed'].includes(booking?.status) ? '' : 'opacity-40'}`}>
@@ -206,12 +236,14 @@ const Track = () => {
             <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">Loading map...</div>
           )}
 
-          <div className="absolute top-4 right-4 z-[400] bg-white px-4 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center gap-2 font-bold text-slate-700">
-            <Navigation size={18} className="text-brand-500" /> Live Tracking Active
-          </div>
+          {shouldShowRoute && (
+            <div className="absolute top-4 right-4 z-20 bg-white px-4 py-2 rounded-xl shadow-lg border border-slate-100 flex items-center gap-2 font-bold text-slate-700">
+              <Navigation size={18} className="text-brand-500" /> Live Tracking Active
+            </div>
+          )}
 
-          {routeInfo && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-slate-900 text-white px-6 py-3 rounded-full shadow-lg border border-slate-700 flex items-center gap-4 font-bold shadow-brand-500/20 w-max">
+          {routeInfo && shouldShowRoute && (
+            <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/95 text-white px-4 sm:px-6 py-3 rounded-full shadow-lg border border-slate-700 flex items-center gap-3 sm:gap-4 font-bold shadow-brand-500/20 w-max max-w-[95%] pointer-events-none">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
                 Tasker is on the way

@@ -85,6 +85,20 @@ const ChatModal = ({ booking, onClose }) => {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const normalizeId = (idLike) => String(idLike?._id || idLike || '');
+
+  const getSenderName = (msg, isMe) => {
+    if (isMe) return 'You';
+
+    const senderId = normalizeId(msg.senderId);
+    const customerId = normalizeId(booking?.customerId);
+    const taskerId = normalizeId(booking?.taskerId);
+
+    if (senderId && senderId === customerId) return booking?.customerId?.name || 'Customer';
+    if (senderId && senderId === taskerId) return booking?.taskerId?.name || 'Tasker';
+    return 'User';
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-end sm:items-center justify-center p-4">
       <div className="bg-white w-full max-w-md h-[520px] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -125,7 +139,8 @@ const ChatModal = ({ booking, onClose }) => {
             </div>
           ) : (
             messages.map((msg, i) => {
-              const isMe = msg.senderId === user._id || msg.senderId?._id === user._id;
+              const isMe = normalizeId(msg.senderId) === normalizeId(user?._id);
+              const senderName = getSenderName(msg, isMe);
               return (
                 <div key={msg._id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
@@ -133,6 +148,9 @@ const ChatModal = ({ booking, onClose }) => {
                       ? 'bg-brand-500 text-white rounded-br-sm'
                       : 'bg-white text-slate-800 rounded-bl-sm border border-slate-100'
                   }`}>
+                    <p className={`text-[10px] font-bold mb-1 ${isMe ? 'text-brand-100 text-right' : 'text-slate-500'}`}>
+                      {senderName}
+                    </p>
                     <p className="leading-relaxed">{msg.text}</p>
                     <p className={`text-[10px] mt-1 ${isMe ? 'text-brand-200 text-right' : 'text-slate-400'}`}>
                       {formatTime(msg.createdAt)}
