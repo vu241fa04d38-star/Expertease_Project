@@ -77,7 +77,7 @@ const Track = () => {
   }, [booking, location]);
 
   return (
-    <div className="flex flex-col h-full space-y-6">
+    <div className="space-y-6">
       {showChat && booking && (
         <ChatModal booking={booking} onClose={() => setShowChat(false)} />
       )}
@@ -94,7 +94,7 @@ const Track = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Tracking Sidebar */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col space-y-6">
           <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-start gap-3 border border-emerald-100">
@@ -154,7 +154,7 @@ const Track = () => {
         </div>
 
         {/* Map View */}
-        <div className="lg:col-span-2 bg-slate-100 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
+        <div className="lg:col-span-2 bg-slate-100 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[45vh] sm:min-h-[50vh] lg:min-h-[620px]">
           {booking ? (
             (() => {
               const custLat = booking.location?.lat || location.lat;
@@ -171,7 +171,7 @@ const Track = () => {
               const centerLng = pLng ? (custLng + pLng) / 2 : custLng;
 
               return (
-                <MapContainer center={[centerLat, centerLng]} zoom={14} className="w-full h-full z-10">
+                <MapContainer center={[centerLat, centerLng]} zoom={14} className="absolute inset-0 w-full h-full z-10">
                   <TileLayer
                     attribution='&copy; OpenStreetMap'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
