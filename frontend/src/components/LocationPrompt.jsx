@@ -2,16 +2,21 @@ import { useState, useEffect } from 'react';
 
 const LocationPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
+  const saveGpsLocation = (coords) => {
+    sessionStorage.setItem('userLocation', JSON.stringify({
+      lat: coords.latitude,
+      lng: coords.longitude,
+      source: 'gps',
+      capturedAt: Date.now()
+    }));
+  };
 
   useEffect(() => {
     // Always try to get live location silently first
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          sessionStorage.setItem('userLocation', JSON.stringify({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          }));
+          saveGpsLocation(position.coords);
           setShowPrompt(false);
           // Dispatch a custom event so Layout topbar refreshes name
           window.dispatchEvent(new Event('locationUpdated'));
@@ -33,16 +38,14 @@ const LocationPrompt = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          sessionStorage.setItem('userLocation', JSON.stringify({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          }));
+          saveGpsLocation(position.coords);
           setShowPrompt(false);
           window.dispatchEvent(new Event('locationUpdated'));
         },
         () => {
-          // Use Hyderabad as default fallback
-          sessionStorage.setItem('userLocation', JSON.stringify({ lat: 17.385, lng: 78.487 }));
+          // Do not force a wrong fallback location (e.g., Hyderabad).
+          // User can continue with manual address entry.
+          sessionStorage.removeItem('userLocation');
           setShowPrompt(false);
           window.dispatchEvent(new Event('locationUpdated'));
         }

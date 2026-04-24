@@ -15,22 +15,46 @@ const BookingModal = ({ tasker, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successBookingId, setSuccessBookingId] = useState(null);
+  
+  const getSessionLocation = () => {
+    const locStr = sessionStorage.getItem('userLocation');
+    if (!locStr) return null;
+    try {
+      const parsed = JSON.parse(locStr);
+      if (typeof parsed?.lat === 'number' && typeof parsed?.lng === 'number') {
+        return parsed;
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  const geocodeAddress = async (address) => {
+    if (!address?.trim()) return null;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const first = data[0];
+        return { lat: Number(first.lat), lng: Number(first.lon) };
+      }
+    } catch (e) {}
+    return null;
+  };
 
   // Fetch human-readable location to pre-fill address
   useEffect(() => {
-    const locStr = sessionStorage.getItem('userLocation');
-    if (locStr) {
-      try {
-        const { lat, lng } = JSON.parse(locStr);
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.display_name) {
-              setFormData(prev => ({ ...prev, address: data.display_name }));
-            }
-          })
-          .catch(() => {});
-      } catch (e) {}
+    const storedLoc = getSessionLocation();
+    // Only auto-fill address when we have a real GPS capture from this app.
+    if (storedLoc?.source === 'gps') {
+      const { lat, lng } = storedLoc;
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.display_name) {
+            setFormData(prev => ({ ...prev, address: data.display_name }));
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -48,11 +72,11 @@ const BookingModal = ({ tasker, onClose }) => {
 
     try {
       const token = localStorage.getItem('token');
-      
-      let locationCoords = null;
-      const locStr = sessionStorage.getItem('userLocation');
-      if (locStr) {
-        try { locationCoords = JSON.parse(locStr); } catch(e) {}
+      // Prefer location derived from entered address to avoid wrong fallback coordinates.
+      let locationCoords = await geocodeAddress(formData.address);
+      if (!locationCoords) {
+        const storedLoc = getSessionLocation();
+        locationCoords = storedLoc ? { lat: storedLoc.lat, lng: storedLoc.lng } : null;
       }
 
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/bookings` , {
