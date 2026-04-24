@@ -11,8 +11,8 @@ const resetAdmin = async () => {
         await mongoose.connect(mongoUri);
         console.log('✅ Connected to MongoDB');
 
-        const adminEmail = 'admin@expertease.com';
-        const newPassword = 'admin123';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@expertease.com';
+        const newPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);

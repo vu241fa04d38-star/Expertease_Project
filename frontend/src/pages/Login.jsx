@@ -12,13 +12,21 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
       const user = await login(email, password);
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'tasker') navigate('/tasker');
       else navigate('/customer');
     } catch (err) {
-      setError('Invalid email or password');
+      const backendMessage = err.response?.data?.message;
+      if (backendMessage) {
+        setError(backendMessage);
+      } else if (err.request) {
+        setError('Network/CORS error: check API and backend CLIENT_URL settings.');
+      } else {
+        setError(err.message || 'Login failed');
+      }
     }
   };
 
