@@ -121,9 +121,17 @@ exports.addMessage = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized for this booking' });
     }
 
+    const text = typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+
+    if (!text && !imageUrl) {
+      return res.status(400).json({ success: false, message: 'Message text or image is required' });
+    }
+
     booking.messages.push({
       senderId: req.user._id,
-      text: req.body.text,
+      text: text || undefined,
+      imageUrl: imageUrl || undefined,
       createdAt: new Date(),
       isRead: false
     });
