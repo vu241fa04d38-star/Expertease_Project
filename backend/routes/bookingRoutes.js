@@ -8,6 +8,7 @@ router.use(protect);
 router.post('/', createBooking);
 router.get('/', getMyBookings);
 router.put('/:id/status', updateBookingStatus);
+router.patch('/:id/status', updateBookingStatus);
 router.post('/:id/messages', addMessage);
 router.put('/:id/messages/read', markMessagesRead);
 router.post('/:id/review', submitReview);

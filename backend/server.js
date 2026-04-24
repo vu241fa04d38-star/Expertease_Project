@@ -8,8 +8,22 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173'
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, server-to-server)
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  }
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -24,6 +38,21 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/taskers', require('./routes/taskerRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
+
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'ExpertEase API is running' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, status: 'ok', service: 'expertease-api' });
+});
+
+app.use((err, req, res, next) => {
+  if (err && err.message && err.message.startsWith('CORS blocked')) {
+    return res.status(403).json({ success: false, message: err.message });
+  }
+  return next(err);
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
