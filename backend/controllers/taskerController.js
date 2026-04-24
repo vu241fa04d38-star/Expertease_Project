@@ -31,7 +31,7 @@ exports.getNearbyTaskers = async (req, res) => {
 
 exports.updateTaskerProfile = async (req, res) => {
   try {
-    const { serviceType, experience, pricePerHour, isAvailable, skills, location } = req.body;
+    const { serviceType, experience, pricePerHour, isAvailable, skills, location, removeProfilePicture } = req.body;
     
     const user = await User.findById(req.user._id);
     if (!user || user.role !== 'tasker') {
@@ -49,6 +49,9 @@ exports.updateTaskerProfile = async (req, res) => {
     if (pricePerHour) user.pricePerHour = pricePerHour;
     if (isAvailable !== undefined) user.isAvailable = isAvailable;
     if (skills) user.skills = skills;
+    if (removeProfilePicture === true || removeProfilePicture === 'true') {
+      user.profilePicture = undefined;
+    }
     
     let parsedLocation = location;
     if (typeof location === 'string') {
@@ -63,7 +66,8 @@ exports.updateTaskerProfile = async (req, res) => {
     }
 
     await user.save();
-    res.json({ success: true, user });
+    const updatedUser = await User.findById(user._id).select('-password');
+    res.json({ success: true, user: updatedUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

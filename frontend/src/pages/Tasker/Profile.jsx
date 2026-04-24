@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { User, Camera, Save } from 'lucide-react';
+import { User, Camera, Save, Trash2 } from 'lucide-react';
 import { serviceCategories, allCategories } from '../../config/services';
 
 const Profile = () => {
@@ -13,12 +13,21 @@ const Profile = () => {
     pricePerHour: user.pricePerHour || '',
   });
   const [file, setFile] = useState(null);
+  const [removePicture, setRemovePicture] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   
-  const handleFileChange = (e) => setFile(e.target.files[0]);
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setRemovePicture(false);
+  };
+
+  const handleRemovePhoto = () => {
+    setFile(null);
+    setRemovePicture(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +40,7 @@ const Profile = () => {
       data.append('serviceType', JSON.stringify(formData.serviceType));
       data.append('experience', formData.experience);
       data.append('pricePerHour', formData.pricePerHour);
+      data.append('removeProfilePicture', String(removePicture));
       if (file) {
         data.append('profilePicture', file);
       }
@@ -49,6 +59,8 @@ const Profile = () => {
 
       if (res.data.success) {
         setUser(res.data.user);
+        setFile(null);
+        setRemovePicture(false);
         setMessage('Profile updated successfully!');
       }
     } catch (error) {
@@ -78,7 +90,7 @@ const Profile = () => {
               <div className="w-24 h-24 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center text-3xl font-bold overflow-hidden shadow-inner">
                 {file ? (
                   <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="Preview" />
-                ) : user.profilePicture ? (
+                ) : (!removePicture && user.profilePicture) ? (
                   <img src={`${import.meta.env.VITE_API_URL}${user.profilePicture}`} className="w-full h-full object-cover" alt="Profile" />
                 ) : (
                   user.name.charAt(0)
@@ -90,6 +102,15 @@ const Profile = () => {
               </label>
             </div>
             <p className="text-sm text-slate-500 font-medium">Click the camera icon to upload a new profile picture</p>
+            {(file || (!removePicture && user.profilePicture)) && (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+              >
+                <Trash2 size={14} /> Remove Photo
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

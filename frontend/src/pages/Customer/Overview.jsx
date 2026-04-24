@@ -129,20 +129,20 @@ const Overview = () => {
       </div>
 
       {/* Location Banner */}
-      <div className="bg-slate-900 rounded-2xl p-6 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-4">
+      <div className="bg-slate-900 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-lg">
+        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
           <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
             <div className="w-4 h-4 bg-emerald-400 rounded-full border-2 border-slate-900 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold text-slate-400 tracking-wider uppercase mb-1">Your Current Location</p>
-            <p className="text-white font-bold max-w-2xl truncate">{locationName}</p>
+            <p className="text-white font-bold max-w-full truncate">{locationName}</p>
             <p className="text-xs text-slate-500 font-medium mt-1 font-mono">
               {userLoc ? `${userLoc.lat.toFixed(4)}, ${userLoc.lng.toFixed(4)}` : 'Waiting for GPS...'}
             </p>
           </div>
         </div>
-        <button onClick={fetchLocationAndTaskers} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition-colors border border-slate-700 text-sm">
+        <button onClick={fetchLocationAndTaskers} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition-colors border border-slate-700 text-sm">
           <RefreshCw size={14} /> Refresh
         </button>
       </div>

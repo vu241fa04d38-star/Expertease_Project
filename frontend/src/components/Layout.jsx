@@ -161,13 +161,15 @@ const Layout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0">
-          <div className="flex items-center space-x-2 text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
-            <MapPin size={16} className="text-brand-500" />
-            <span className="max-w-[140px] sm:max-w-[200px] truncate">{locationName}</span>
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between gap-2 px-3 sm:px-4 md:px-8 shrink-0">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex max-w-full items-center space-x-2 text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
+              <MapPin size={16} className="text-brand-500 shrink-0" />
+              <span className="max-w-[120px] sm:max-w-[200px] truncate">{locationName}</span>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             
             {/* Settings Gear */}
             <button 

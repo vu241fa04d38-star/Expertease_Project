@@ -1,6 +1,6 @@
 import { useContext, useState, useRef, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { Camera, User, Phone, Mail, MapPin, Save, CheckCircle, Loader2 } from 'lucide-react';
+import { Camera, User, Phone, Mail, MapPin, Save, CheckCircle, Loader2, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
 const CustomerProfile = () => {
@@ -11,6 +11,7 @@ const CustomerProfile = () => {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [previewImg, setPreviewImg] = useState(null);
+  const [removePicture, setRemovePicture] = useState(false);
   const fileRef = useRef();
 
   // Always fetch fresh user data from DB on mount so phone/city are pre-filled
@@ -31,7 +32,10 @@ const CustomerProfile = () => {
           });
           if (u.profilePicture) {
             setPreviewImg(`${import.meta.env.VITE_API_URL}${u.profilePicture}`);
+          } else {
+            setPreviewImg(null);
           }
+          setRemovePicture(false);
         }
       } catch (err) {
         // Fallback to context values if fetch fails
@@ -42,7 +46,10 @@ const CustomerProfile = () => {
         });
         if (user?.profilePicture) {
           setPreviewImg(`${import.meta.env.VITE_API_URL}${user.profilePicture}`);
+        } else {
+          setPreviewImg(null);
         }
+        setRemovePicture(false);
       } finally {
         setLoading(false);
       }
@@ -54,7 +61,16 @@ const CustomerProfile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) setPreviewImg(URL.createObjectURL(file));
+    if (file) {
+      setPreviewImg(URL.createObjectURL(file));
+      setRemovePicture(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setPreviewImg(null);
+    setRemovePicture(true);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const handleSave = async (e) => {
@@ -64,6 +80,7 @@ const CustomerProfile = () => {
     try {
       const token = localStorage.getItem('token');
       const hasFile = fileRef.current?.files[0];
+      const shouldRemovePicture = removePicture && !hasFile;
       let res;
 
       if (hasFile) {
@@ -79,7 +96,7 @@ const CustomerProfile = () => {
       } else {
         // Send as JSON when only updating text fields
         res = await axios.put(`${import.meta.env.VITE_API_URL}/api/auth/me` ,
-          { name: form.name, phone: form.phone, city: form.city },
+          { name: form.name, phone: form.phone, city: form.city, removeProfilePicture: shouldRemovePicture },
           { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
         );
       }
@@ -94,7 +111,11 @@ const CustomerProfile = () => {
         });
         if (updated.profilePicture) {
           setPreviewImg(`${import.meta.env.VITE_API_URL}${updated.profilePicture}`);
+        } else {
+          setPreviewImg(null);
         }
+        setRemovePicture(false);
+        if (fileRef.current) fileRef.current.value = '';
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }
@@ -140,6 +161,15 @@ const CustomerProfile = () => {
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+        {previewImg && (
+          <button
+            type="button"
+            onClick={handleRemoveImage}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+          >
+            <Trash2 size={14} /> Remove Photo
+          </button>
+        )}
         <div className="text-center">
           <h2 className="text-xl font-black text-slate-900">{form.name || user?.name}</h2>
           <p className="text-slate-400 text-sm font-medium capitalize">{user?.role}</p>

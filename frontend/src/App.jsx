@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AdminUsers from './pages/Admin/Users';
 import AdminTaskers from './pages/Admin/Taskers';
@@ -50,6 +51,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
           <Route path="/" element={<Layout />}>
             <Route index element={<DefaultRedirect />} />
