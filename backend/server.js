@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const User = require('./models/User');
 
 dotenv.config();
 
@@ -34,8 +36,43 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const ensureAdminUser = async () => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    console.log('ℹ️ Admin bootstrap skipped (ADMIN_EMAIL/ADMIN_PASSWORD not set)');
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  const existingAdmin = await User.findOne({ email: adminEmail });
+
+  if (!existingAdmin) {
+    await User.create({
+      name: 'System Admin',
+      email: adminEmail,
+      password: hashedPassword,
+      role: 'admin',
+      isApproved: true
+    });
+    console.log(`✅ Admin bootstrap created user: ${adminEmail}`);
+    return;
+  }
+
+  existingAdmin.password = hashedPassword;
+  existingAdmin.role = 'admin';
+  existingAdmin.isApproved = true;
+  await existingAdmin.save();
+  console.log(`✅ Admin bootstrap updated user: ${adminEmail}`);
+};
+
 // DB Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/expertease').then(() => console.log('✅ MongoDB connected'))
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/expertease')
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+    await ensureAdminUser();
+  })
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Routes
