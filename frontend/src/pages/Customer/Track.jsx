@@ -21,6 +21,20 @@ const createIcon = (color, svgPath) => {
 const taskerIcon = createIcon('#10b981', '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'); // wrench
 const customerIcon = createIcon('#3b82f6', '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'); // home
 
+const getTaskerCoordinates = (booking) => {
+  const coords = booking?.taskerId?.location?.coordinates;
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+
+  const lng = Number(coords[0]);
+  const lat = Number(coords[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  // [0,0] is default placeholder and not a real tasker GPS location.
+  if (Math.abs(lat) < 0.000001 && Math.abs(lng) < 0.000001) return null;
+
+  return { lat, lng };
+};
+
 const Track = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,12 +43,20 @@ const Track = () => {
   const [showChat, setShowChat] = useState(false);
   const [routePath, setRoutePath] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
-  const shouldShowRoute = ['accepted', 'in-progress'].includes(booking?.status);
+  const shouldShowRoute = ['pending', 'accepted', 'in-progress'].includes(booking?.status);
+  const taskerCoords = getTaskerCoordinates(booking);
 
   useEffect(() => {
     const locStr = sessionStorage.getItem('userLocation');
     if (locStr) {
-      try { setLocation(JSON.parse(locStr)); } catch(e) {}
+      try {
+        const parsed = JSON.parse(locStr);
+        if (Number.isFinite(parsed?.lat) && Number.isFinite(parsed?.lng)) {
+          setLocation({ lat: Number(parsed.lat), lng: Number(parsed.lng) });
+        }
+      } catch {
+        return;
+      }
     }
   }, []);
 
@@ -70,11 +92,11 @@ const Track = () => {
       return;
     }
 
-    if (booking && booking.taskerId && booking.taskerId.location && booking.taskerId.location.coordinates) {
+    if (booking && taskerCoords) {
       const custLat = booking.location?.lat || location.lat;
       const custLng = booking.location?.lng || location.lng;
-      let pLng = booking.taskerId.location.coordinates[0];
-      let pLat = booking.taskerId.location.coordinates[1];
+      let pLng = taskerCoords.lng;
+      let pLat = taskerCoords.lat;
       
       if (pLat === custLat && pLng === custLng) {
         pLat += 0.002;
@@ -96,7 +118,7 @@ const Track = () => {
         })
         .catch(console.error);
     }
-  }, [booking, location, shouldShowRoute]);
+  }, [booking, location, shouldShowRoute, taskerCoords]);
 
   return (
     <div className="space-y-6">
@@ -189,8 +211,8 @@ const Track = () => {
             (() => {
               const custLat = booking.location?.lat || location.lat;
               const custLng = booking.location?.lng || location.lng;
-              let pLat = booking.taskerId?.location?.coordinates?.[1];
-              let pLng = booking.taskerId?.location?.coordinates?.[0];
+              let pLat = taskerCoords?.lat;
+              let pLng = taskerCoords?.lng;
 
               if (pLat && pLng && custLat === pLat && custLng === pLng) {
                 pLat += 0.002;
@@ -234,6 +256,12 @@ const Track = () => {
             })()
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">Loading map...</div>
+          )}
+
+          {booking && !taskerCoords && (
+            <div className="absolute top-4 left-4 z-20 bg-amber-50 text-amber-800 px-4 py-2 rounded-xl border border-amber-200 font-semibold text-sm shadow">
+              Waiting for tasker GPS location...
+            </div>
           )}
 
           {shouldShowRoute && (

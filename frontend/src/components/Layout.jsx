@@ -8,6 +8,18 @@ import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
+const toRadians = (value) => (value * Math.PI) / 180;
+
+const getDistanceInMeters = (lat1, lng1, lat2, lng2) => {
+  const earthRadius = 6371000;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+    Math.sin(dLng / 2) ** 2;
+  return 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 const Layout = () => {
   const { user, logout } = useContext(AuthContext);
   const { theme } = useTheme();
@@ -77,7 +89,7 @@ const Layout = () => {
               }
             })
             .catch(() => setLocationName('Location Found'));
-        } catch (e) {
+        } catch {
           setLocationName('Invalid Location');
         }
       } else {
@@ -89,6 +101,80 @@ const Layout = () => {
     window.addEventListener('locationUpdated', resolveLocation);
     return () => window.removeEventListener('locationUpdated', resolveLocation);
   }, []);
+
+  // Keep tasker's GPS synced to backend so customers can see live tracking.
+  useEffect(() => {
+    if (!user || user.role !== 'tasker') return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let isActive = true;
+    let watchId = null;
+    let lastSynced = { lat: null, lng: null, at: 0 };
+
+    const syncTaskerLocation = async (lat, lng) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (!isActive) return;
+
+      const now = Date.now();
+      const movedEnough = lastSynced.lat == null || getDistanceInMeters(lastSynced.lat, lastSynced.lng, lat, lng) > 25;
+      const staleEnough = (now - lastSynced.at) > 30000;
+      if (!movedEnough && !staleEnough) return;
+
+      lastSynced = { lat, lng, at: now };
+      sessionStorage.setItem('userLocation', JSON.stringify({
+        lat,
+        lng,
+        source: 'gps',
+        capturedAt: now
+      }));
+      window.dispatchEvent(new Event('locationUpdated'));
+
+      try {
+        await axios.patch(
+          `${import.meta.env.VITE_API_URL}/api/taskers/profile`,
+          { location: { lat, lng } },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (error) {
+        console.error('Failed to sync tasker location', error);
+      }
+    };
+
+    const syncFromSession = () => {
+      const locStr = sessionStorage.getItem('userLocation');
+      if (!locStr) return;
+      try {
+        const parsed = JSON.parse(locStr);
+        syncTaskerLocation(Number(parsed.lat), Number(parsed.lng));
+      } catch {
+        return;
+      }
+    };
+
+    syncFromSession();
+
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          syncTaskerLocation(position.coords.latitude, position.coords.longitude);
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+    }
+
+    const intervalId = setInterval(syncFromSession, 30000);
+
+    return () => {
+      isActive = false;
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      clearInterval(intervalId);
+    };
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -201,7 +287,9 @@ const Layout = () => {
               >
                 <Bell size={20} />
                 {hasNotification && (
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold leading-[18px] text-center border-2 border-white">
+                    {notifCount > 9 ? '9+' : notifCount}
+                  </span>
                 )}
               </button>
             )}
