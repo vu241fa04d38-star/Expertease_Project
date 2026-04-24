@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [form, setForm] = useState({
     email: '',
     phone: '',
@@ -61,11 +64,14 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
         <div>
           <div className="flex justify-center mb-4">
-            <Logo size="lg" theme="light" />
+            <Logo size="lg" theme={theme === 'dark' ? 'dark' : 'light'} />
           </div>
           <h2 className="mt-2 text-center text-2xl font-extrabold text-slate-900 tracking-tight">
             Reset your password

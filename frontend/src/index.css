@@ -8,13 +8,101 @@
   --color-ink-900: #0f172a;
 }
 
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
 body {
   background-color: #f8fafc;
   color: var(--color-ink-900);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .map-container {
   width: 100%;
   height: 400px;
   border-radius: 0.75rem;
+}
+
+.dark body {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.dark .bg-white {
+  background-color: #0f172a;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgb(15 23 42 / 0.95);
+}
+
+.dark .bg-slate-50 {
+  background-color: #111827;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1f2937;
+}
+
+.dark .bg-slate-200 {
+  background-color: #334155;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .text-slate-400 {
+  color: #64748b;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: #334155;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: #1f2937;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #334155;
+}
+
+.dark .hover\:bg-slate-200:hover {
+  background-color: #475569;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
 }

@@ -4,6 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { serviceCategories, allCategories } from '../config/services';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 
 const Register = () => {
   const [selectedCategory, setSelectedCategory] = useState("Featured Tasks");
@@ -12,6 +14,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const { login } = useContext(AuthContext);
+  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,11 +51,14 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="max-w-xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
         <div>
           <div className="flex justify-center mb-4">
-            <Logo size="lg" theme="light" />
+            <Logo size="lg" theme={theme === 'dark' ? 'dark' : 'light'} />
           </div>
           <h2 className="mt-2 text-center text-2xl font-extrabold text-slate-900 tracking-tight">
             Create your account

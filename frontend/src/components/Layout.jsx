@@ -5,9 +5,12 @@ import { LogOut, User, MapPin, Search, Home, Users, Briefcase, Bell, Settings } 
 import axios from 'axios';
 import SettingsModal from './SettingsModal';
 import Logo from './Logo';
+import ThemeToggle from './ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 
 const Layout = () => {
   const { user, logout } = useContext(AuthContext);
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [locationName, setLocationName] = useState('Detecting Location...');
@@ -119,7 +122,7 @@ const Layout = () => {
       {/* Sidebar */}
       <div className="hidden md:flex md:w-64 bg-white border-r border-slate-200 flex-col">
         <div className="h-16 flex items-center px-5 border-b border-slate-100">
-          <Logo size="md" theme="light" />
+          <Logo size="md" theme={theme === 'dark' ? 'dark' : 'light'} />
         </div>
         
         <div className="flex-1 overflow-y-auto py-4">
@@ -170,6 +173,7 @@ const Layout = () => {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            <ThemeToggle />
             
             {/* Settings Gear */}
             <button 
