@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ExpertEase — On-Demand Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Satoshi:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ═══════════════════════ RESET & TOKENS ═════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#0D0F14;--ink2:#1C1F28;--ink3:#2B303D;
+  --slate:#4A5166;--muted:#8B92A9;--ghost:#C4C9D9;
+  --canvas:#F6F8FD;--surface:#FFFFFF;--surface2:#F0F3FA;
+  --teal:#00BFA5;--teal-dark:#009688;--teal-glow:rgba(0,191,165,.18);
+  --amber:#FF8F00;--amber-light:#FFF8E1;
+  --rose:#F43F5E;--rose-light:#FFF1F3;
+  --blue:#3B82F6;--blue-light:#EFF6FF;
+  --green:#10B981;--green-light:#ECFDF5;
+  --border:rgba(13,15,20,.08);--border2:rgba(13,15,20,.14);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.12),0 8px 20px rgba(0,0,0,.06);
+  --r-sm:8px;--r:12px;--r-lg:18px;--r-xl:24px;--r-full:999px;
+  --font-head:'Cabinet Grotesk',sans-serif;
+  --font-body:'Satoshi',sans-serif;
+  --transition:.18s cubic-bezier(.4,0,.2,1);
+}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);background:var(--canvas);color:var(--ink);overflow-x:hidden;line-height:1.5}
+button{font-family:var(--font-body);cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:var(--font-body);outline:none}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+
+/* ═══════════════════════ UTILITY ════════════════════════════ */
+.hidden{display:none!important}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-4{gap:4px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.gap-20{gap:20px}
+.w-full{width:100%}.h-full{height:100%}
+.mt-4{margin-top:4px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}
+.text-sm{font-size:.82rem}.text-xs{font-size:.72rem}.text-lg{font-size:1.1rem}.text-xl{font-size:1.3rem}
+.font-medium{font-weight:500}.font-bold{font-weight:700}.font-black{font-weight:900}
+.text-muted{color:var(--muted)}.text-teal{color:var(--teal)}.text-ink{color:var(--ink)}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.relative{position:relative}.absolute{position:absolute}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes ping{0%{transform:scale(1);opacity:1}75%,100%{transform:scale(2);opacity:0}}
+.fade-in{animation:fadeIn .35s ease both}
+.slide-up{animation:slideUp .4s ease both}
+
+/* ═══════════════════════ FORM ELEMENTS ══════════════════════ */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.8rem;font-weight:600;color:var(--slate);margin-bottom:6px;letter-spacing:.3px;text-transform:uppercase}
+.input{width:100%;padding:11px 14px;border:1.5px solid var(--border2);border-radius:var(--r);
+  font-size:.9rem;color:var(--ink);background:var(--surface);transition:border-color var(--transition),box-shadow var(--transition)}
+.input:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-glow)}
+.input::placeholder{color:var(--ghost)}
+select.input{cursor:pointer}
+textarea.input{resize:none}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input-icon{position:relative}
+.input-icon .input{padding-left:40px}
+.input-icon .i-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+
+/* ═══════════════════════ BUTTONS ════════════════════════════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 22px;border-radius:var(--r);font-weight:600;font-size:.9rem;
+  transition:all var(--transition);position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background var(--transition)}
+.btn:hover::after{background:rgba(255,255,255,.12)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--teal);color:#fff;box-shadow:0 4px 14px rgba(0,191,165,.3)}
+.btn-primary:hover{background:var(--teal-dark);box-shadow:0 6px 20px rgba(0,191,165,.4)}
+.btn-navy{background:var(--ink);color:#fff}
+.btn-navy:hover{background:var(--ink2)}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--ink)}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+.btn-ghost{background:transparent;color:var(--slate)}
+.btn-ghost:hover{background:var(--surface2);color:var(--ink)}
+.btn-danger{background:var(--rose);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-sm{padding:7px 14px;font-size:.8rem;border-radius:var(--r-sm)}
+.btn-lg{padding:14px 28px;font-size:1rem;border-radius:var(--r)}
+.btn-full{width:100%}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:var(--r-sm);flex-shrink:0}
+.btn-icon-lg{width:44px;height:44px;padding:0;border-radius:var(--r)}
+.icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--slate)}
+.icon-btn:hover{background:var(--surface);color:var(--ink);border-color:var(--border2)}
+
+/* ═══════════════════════ CHIP / TAG / BADGE ═════════════════ */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-full);
+  font-size:.72rem;font-weight:600;letter-spacing:.2px}
+.chip-teal{background:var(--teal-glow);color:var(--teal-dark)}
+.chip-amber{background:var(--amber-light);color:var(--amber)}
+.chip-rose{background:var(--rose-light);color:var(--rose)}
+.chip-green{background:var(--green-light);color:var(--green)}
+.chip-blue{background:var(--blue-light);color:var(--blue)}
+.chip-ghost{background:var(--surface2);color:var(--slate)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-green{background:var(--green)}.dot-amber{background:var(--amber)}.dot-rose{background:var(--rose)}
+
+/* ═══════════════════════ CARD ═══════════════════════════════ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm)}
+.card-hover{transition:transform var(--transition),box-shadow var(--transition),border-color var(--transition)}
+.card-hover:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--border2)}
+
+/* ═══════════════════════ TOAST ══════════════════════════════ */
+#toasts{position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:all;background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--r);
+  font-size:.85rem;min-width:260px;display:flex;align-items:center;gap:10px;
+  box-shadow:var(--shadow-lg);animation:slideUp .3s ease}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--rose)}
+.toast.info{border-left:3px solid var(--teal)}
+
+/* ═══════════════════════ MODAL ══════════════════════════════ */
+.overlay{position:fixed;inset:0;background:rgba(13,15,20,.55);z-index:1000;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);
+  animation:fadeIn .2s ease}
+.modal{background:var(--surface);border-radius:var(--r-xl);width:90%;max-width:500px;
+  max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:slideUp .3s ease;position:relative}
+.modal-header{padding:28px 28px 0;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-body{padding:24px 28px 28px}
+.modal-title{font-family:var(--font-head);font-size:1.4rem;font-weight:800;color:var(--ink)}
+.modal-sub{font-size:.88rem;color:var(--muted);margin-top:4px}
+.modal-close{background:var(--surface2);border:none;width:32px;height:32px;border-radius:var(--r-full);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);
+  font-size:1.1rem;flex-shrink:0;transition:background var(--transition)}
+.modal-close:hover{background:var(--rose-light);color:var(--rose)}
+
+/* ═══════════════════════ LOCATION GATE ══════════════════════ */
+#loc-gate{position:fixed;inset:0;z-index:2000;background:linear-gradient(145deg,#0D0F14 0%,#1C2B3A 50%,#0D1F0F 100%);
+  display:flex;align-items:center;justify-content:center;flex-direction:column}
+.loc-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:28px;padding:48px 40px;max-width:460px;width:90%;text-align:center;
+  backdrop-filter:blur(20px)}
+.loc-icon{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-dark));
+  display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 24px;
+  box-shadow:0 0 0 16px rgba(0,191,165,.12),0 0 0 32px rgba(0,191,165,.06)}
+.loc-title{font-family:var(--font-head);font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:10px}
+.loc-desc{color:rgba(255,255,255,.6);font-size:.92rem;line-height:1.7;margin-bottom:32px}
+.loc-features{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;text-align:left}
+.loc-feature{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.75);font-size:.88rem}
+.loc-feature-icon{width:32px;height:32px;border-radius:8px;background:rgba(0,191,165,.2);
+  display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.loc-loading{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.7);font-size:.88rem;margin-top:16px}
+.loc-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--teal);border-radius:50%;animation:spin 1s linear infinite}
+
+/* ═══════════════════════ AUTH SCREEN ════════════════════════ */
+#auth-screen{position:fixed;inset:0;z-index:1900;background:var(--canvas);display:flex;overflow:hidden}
+.auth-left{flex:1;background:linear-gradient(145deg,#0B1D3A 0%,#142850 60%,#0D2B1A 100%);
+  display:flex;flex-direction:column;justify-content:center;padding:60px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,191,165,.15) 0%,transparent 70%);top:-100px;right:-100px}
+.auth-left::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,191,165,.1) 0%,transparent 70%);bottom:50px;left:-50px}
+.auth-brand{font-family:var(--font-head);font-size:2rem;font-weight:900;color:#fff;margin-bottom:8px}
+.auth-brand span{color:var(--teal)}
+.auth-tagline{color:rgba(255,255,255,.55);font-size:.9rem;margin-bottom:48px}
+.auth-feature{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px}
+.auth-feature-dot{width:10px;height:10px;border-radius:50%;background:var(--teal);margin-top:5px;flex-shrink:0}
+.auth-feature-title{font-weight:600;color:#fff;font-size:.9rem}
+.auth-feature-desc{color:rgba(255,255,255,.5);font-size:.82rem;margin-top:2px}
+.auth-right{width:480px;display:flex;flex-direction:column;justify-content:center;padding:60px 48px;overflow-y:auto}
+.auth-tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--r);margin-bottom:28px}
+.auth-tab{flex:1;padding:10px;border:none;background:transparent;border-radius:var(--r-sm);
+  font-family:var(--font-body);font-size:.88rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all var(--transition)}
+.auth-tab.active{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:var(--shadow-sm)}
+.role-select{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.role-card{padding:14px 10px;border:1.5px solid var(--border);border-radius:var(--r);
+  text-align:center;cursor:pointer;transition:all var(--transition)}
+.role-card:hover{border-color:var(--teal);background:var(--teal-glow)}
+.role-card.active{border-color:var(--teal);background:var(--teal-glow)}
+.role-card .role-icon{font-size:1.4rem;margin-bottom:6px}
+.role-card .role-name{font-size:.78rem;font-weight:700;color:var(--ink)}
+
+/* ═══════════════════════ APP SHELL ══════════════════════════ */
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow-sm)}
+.topbar-brand{font-family:var(--font-head);font-weight:900;font-size:1.1rem;color:var(--ink);white-space:nowrap}
+.topbar-brand span{color:var(--teal)}
+.topbar-loc{flex:1;display:flex;align-items:center;gap:8px;min-width:0;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-full);
+  padding:6px 14px;cursor:pointer;transition:all var(--transition)}
+.topbar-loc:hover{border-color:var(--teal);background:var(--teal-glow)}
+.topbar-loc-icon{color:var(--rose);font-size:.9rem;flex-shrink:0}
+.topbar-loc-text{font-size:.8rem;color:var(--slate);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-avatar{width:36px;height:36px;border-radius:50%;background:var(--teal);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-head);
+  font-weight:800;font-size:.85rem;color:#fff;cursor:pointer;flex-shrink:0;position:relative}
+.avatar-ring{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--teal)}
+.notif-badge{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;
+  background:var(--rose);border:2px solid var(--surface)}
+
+/* ═══════════════════════ LAYOUT ════════════════════════════ */
+.app-body{display:flex;flex:1}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;
+  top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);
+  cursor:pointer;transition:all var(--transition);font-size:.88rem;font-weight:500;color:var(--slate)}
+.nav-item:hover{background:var(--surface2);color:var(--ink)}
+.nav-item.active{background:var(--teal-glow);color:var(--teal-dark);font-weight:700}
+.nav-item .nav-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.nav-divider{height:1px;background:var(--border);margin:8px 4px}
+.nav-section-label{font-size:.68rem;font-weight:700;color:var(--ghost);letter-spacing:.8px;
+  text-transform:uppercase;padding:4px 12px;margin-top:4px}
+.main{flex:1;overflow-y:auto;max-height:calc(100vh - 60px)}
+.page{padding:28px;animation:fadeIn .3s ease;display:none}
+.page.active{display:block}
+
+/* ═══════════════════════ LOCATION BAR ══════════════════════ */
+.location-bar{background:linear-gradient(to right,var(--ink),var(--ink2));
+  border-radius:var(--r-lg);padding:16px 20px;margin-bottom:24px;
+  display:flex;align-items:center;gap:14px}
+.location-bar .loc-pulse{position:relative;width:36px;height:36px;flex-shrink:0}
+.loc-pulse-dot{width:12px;height:12px;background:var(--teal);border-radius:50%;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.loc-pulse-ring{width:36px;height:36px;border:2px solid var(--teal);border-radius:50%;
+  position:absolute;animation:ping 2s cubic-bezier(0,0,.2,1) infinite;opacity:.4}
+.location-bar .loc-text{flex:1;min-width:0}
+.loc-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.4)}
+.loc-address{font-size:.9rem;font-weight:600;color:#fff;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-coords{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:1px;font-family:monospace}
+
+/* ═══════════════════════ SEARCH BAR ════════════════════════ */
+.search-wrap{position:relative;margin-bottom:24px}
+.search-input{width:100%;padding:14px 20px 14px 48px;border:1.5px solid var(--border);
+  border-radius:var(--r-full);font-size:.95rem;background:var(--surface);
+  transition:all var(--transition);box-shadow:var(--shadow-sm)}
+.search-input:focus{border-color:var(--teal);box-shadow:0 0 0 4px var(--teal-glow),var(--shadow)}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem;pointer-events:none}
+.search-right{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:6px}
+.search-filter-btn{padding:8px 16px;border-radius:var(--r-full);background:var(--teal);color:#fff;
+  font-size:.8rem;font-weight:600;border:none;cursor:pointer;transition:all var(--transition)}
+.search-filter-btn:hover{background:var(--teal-dark)}
+
+/* ═══════════════════════ CATEGORY CHIPS ════════════════════ */
+.category-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:24px;
+  scrollbar-width:none}
+.category-scroll::-webkit-scrollbar{display:none}
+.cat-chip{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-full);
+  background:var(--surface);border:1.5px solid var(--border);font-size:.82rem;font-weight:600;
+  color:var(--slate);cursor:pointer;white-space:nowrap;transition:all var(--transition)}
+.cat-chip:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+.cat-chip.active{border-color:var(--teal);color:var(--teal);background:var(--teal-glow)}
+
+/* ═══════════════════════ PROVIDER CARD ════════════════════ */
+.providers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.provider-card{padding:20px;cursor:pointer}
+.pc-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
+.pc-avatar{width:52px;height:52px;border-radius:var(--r);display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-head);font-weight:800;font-size:1.1rem;
+  color:#fff;flex-shrink:0;position:relative}
+.pc-avatar.teal{background:linear-gradient(135deg,var(--teal),var(--teal-dark))}
+.pc-avatar.amber{background:linear-gradient(135deg,#FF8F00,#E65100)}
+.pc-avatar.blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8)}
+.pc-avatar.purple{background:linear-gradient(135deg,#8B5CF6,#6D28D9)}
+.pc-status{position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--surface)}
+.pc-status.available{background:var(--green)}
+.pc-status.busy{background:var(--amber)}
+.pc-info{flex:1;min-width:0}
+.pc-name{font-family:var(--font-head);font-weight:800;font-size:1rem;color:var(--ink);margin-bottom:2px}
+.pc-role{font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.pc-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pc-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.pc-meta-item{text-align:center;padding:8px;background:var(--surface2);border-radius:var(--r-sm)}
+.pc-meta-val{font-family:var(--font-head);font-weight:800;font-size:.95rem;color:var(--ink)}
+.pc-meta-label{font-size:.68rem;color:var(--muted);margin-top:1px}
+.stars{color:#FBBF24;font-size:.85rem;letter-spacing:-1px}
+.pc-actions{display:flex;gap:8px}
+
+/* ═══════════════════════ MAP ════════════════════════════════ */
+#map-view{height:400px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);margin-bottom:20px}
+.map-container-split{display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:24px}
+.map-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  overflow-y:auto;max-height:400px}
+.map-list-item{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition)}
+.map-list-item:last-child{border-bottom:none}
+.map-list-item:hover,.map-list-item.active{background:var(--teal-glow)}
+.map-list-avatar{width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:.9rem;color:#fff;flex-shrink:0}
+
+/* ═══════════════════════ TRACKING ══════════════════════════ */
+.tracking-bar{background:var(--ink);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:24px;display:none}
+.tracking-bar.visible{display:block;animation:slideUp .3s ease}
+.tracking-progress{display:flex;align-items:center;margin-top:16px;gap:0}
+.t-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.t-dot{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);
+  border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;color:rgba(255,255,255,.4);position:relative;z-index:1;transition:all .4s}
+.t-dot.done{background:var(--teal);border-color:var(--teal);color:#fff}
+.t-dot.current{background:var(--amber);border-color:var(--amber);color:#fff;animation:pulse 1.5s infinite}
+.t-line{flex:1;height:2px;background:rgba(255,255,255,.1);margin-bottom:22px}
+.t-line.done{background:var(--teal)}
+.t-label{font-size:.68rem;color:rgba(255,255,255,.4);text-align:center;font-weight:500}
+.t-label.done{color:var(--teal)}.t-label.current{color:var(--amber)}
+
+/* ═══════════════════════ AI CHAT ════════════════════════════ */
+.chat-container{display:flex;flex-direction:column;height:520px;border-radius:var(--r-lg);
+  background:var(--surface);border:1px solid var(--border);overflow:hidden}
+.chat-header{padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;background:var(--surface)}
+.chat-ai-badge{background:linear-gradient(135deg,var(--teal),#00897B);color:#fff;
+  font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:var(--r-full);letter-spacing:.3px}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;
+  background:var(--canvas)}
+.chat-msg{max-width:76%;display:flex;flex-direction:column;gap:4px}
+.chat-msg.user{align-self:flex-end;align-items:flex-end}
+.chat-msg.ai{align-self:flex-start;align-items:flex-start}
+.chat-bubble{padding:10px 14px;border-radius:14px;font-size:.88rem;line-height:1.55}
+.chat-msg.user .chat-bubble{background:var(--teal);color:#fff;border-bottom-right-radius:4px}
+.chat-msg.ai .chat-bubble{background:var(--surface);border:1px solid var(--border);
+  color:var(--ink);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm)}
+.chat-time{font-size:.68rem;color:var(--ghost)}
+.chat-typing{display:flex;align-items:center;gap:5px;padding:10px 14px;background:var(--surface);
+  border:1px solid var(--border);border-radius:14px;border-bottom-left-radius:4px;width:fit-content}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:pulse 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+.chat-footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--surface)}
+.chat-input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-full);
+  font-size:.88rem;transition:border-color var(--transition)}
+.chat-input:focus{border-color:var(--teal)}
+.chat-quick{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 4px;border-top:1px solid var(--border)}
+.quick-btn{padding:6px 12px;border-radius:var(--r-full);background:var(--teal-glow);color:var(--teal-dark);
+  font-size:.75rem;font-weight:600;border:1px solid rgba(0,191,165,.3);cursor:pointer;transition:all var(--transition)}
+.quick-btn:hover{background:var(--teal);color:#fff}
+
+/* ═══════════════════════ DASHBOARD METRICS ═════════════════ */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.metric-card{padding:20px;position:relative;overflow:hidden}
+.metric-card::after{content:attr(data-icon);position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  font-size:2.5rem;opacity:.06;pointer-events:none}
+.metric-label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.metric-value{font-family:var(--font-head);font-size:1.9rem;font-weight:900;color:var(--ink);line-height:1}
+.metric-sub{font-size:.75rem;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:4px}
+.metric-up{color:var(--green)}.metric-down{color:var(--rose)}
+
+/* ═══════════════════════ ADMIN TABLE ═══════════════════════ */
+.table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--surface)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface2)}
+th{padding:12px 16px;text-align:left;font-size:.75rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+td{padding:14px 16px;font-size:.87rem;color:var(--ink);border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.table-avatar{width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:.8rem;color:#fff}
+
+/* ═══════════════════════ PROVIDER DASH ════════════════════ */
+.profile-hero{background:linear-gradient(135deg,var(--ink) 0%,#1C2B3A 100%);
+  border-radius:var(--r-xl);padding:32px;margin-bottom:24px;
+  display:flex;align-items:center;gap:24px;position:relative;overflow:hidden}
+.profile-hero::before{content:'';position:absolute;right:-40px;top:-40px;
+  width:200px;height:200px;border-radius:50%;background:rgba(0,191,165,.1)}
+.profile-avatar-xl{width:80px;height:80px;border-radius:var(--r-lg);display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-head);font-weight:900;font-size:2rem;
+  color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--teal),var(--teal-dark));
+  box-shadow:0 8px 24px rgba(0,191,165,.35);cursor:pointer;position:relative}
+.profile-avatar-xl::after{content:'✏️';position:absolute;bottom:-4px;right:-4px;font-size:.7rem;
+  background:var(--surface);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;border:1.5px solid var(--border)}
+.profile-info{flex:1}
+.profile-name{font-family:var(--font-head);font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:4px}
+.profile-role{color:rgba(255,255,255,.55);font-size:.88rem;margin-bottom:12px}
+.profile-chips{display:flex;gap:8px;flex-wrap:wrap}
+.toggle-avail{display:flex;align-items:center;gap:10px;padding:10px 16px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r-full);cursor:pointer;transition:all var(--transition)}
+.toggle-avail:hover{background:rgba(0,191,165,.2)}
+.toggle-switch{width:40px;height:22px;background:rgba(255,255,255,.2);border-radius:var(--r-full);
+  position:relative;transition:background var(--transition)}
+.toggle-switch.on{background:var(--teal)}
+.toggle-thumb{width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;
+  top:2px;left:2px;transition:left var(--transition);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle-switch.on .toggle-thumb{left:20px}
+
+/* ═══════════════════════ JOB REQUEST ═══════════════════════ */
+.job-card{padding:20px;margin-bottom:14px;border-left:3px solid transparent}
+.job-card.pending{border-left-color:var(--amber)}
+.job-card.accepted{border-left-color:var(--green)}
+.job-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.job-customer{display:flex;align-items:center;gap:10px}
+.job-customer-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--slate)}
+.job-actions{display:flex;gap:8px;margin-top:12px}
+
+/* ═══════════════════════ SECTION HEADER ════════════════════ */
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.section-title{font-family:var(--font-head);font-size:1.2rem;font-weight:900;color:var(--ink)}
+.section-sub{font-size:.82rem;color:var(--muted);margin-top:2px}
+.section-action{font-size:.82rem;color:var(--teal);font-weight:600;cursor:pointer}
+.section-action:hover{text-decoration:underline}
+
+/* ═══════════════════════ APPROVAL BADGE ════════════════════ */
+.approval-pending{background:linear-gradient(to right,var(--amber-light),#FFF3E0);
+  border:1px solid rgba(255,143,0,.25);border-radius:var(--r-lg);padding:20px;margin-bottom:24px;
+  display:flex;align-items:center;gap:14px}
+
+/* ═══════════════════════ API DOC ════════════════════════════ */
+.api-block{background:var(--ink);border-radius:var(--r-lg);padding:0;overflow:hidden;margin-bottom:16px}
+.api-header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.method-badge{padding:3px 8px;border-radius:4px;font-size:.72rem;font-weight:800;font-family:monospace;letter-spacing:.5px}
+.method-get{background:rgba(59,130,246,.3);color:#93C5FD}
+.method-post{background:rgba(16,185,129,.3);color:#6EE7B7}
+.method-patch{background:rgba(245,158,11,.3);color:#FCD34D}
+.method-delete{background:rgba(244,63,94,.3);color:#FDA4AF}
+.api-endpoint{color:rgba(255,255,255,.8);font-family:monospace;font-size:.85rem}
+.api-desc{color:rgba(255,255,255,.4);font-size:.78rem;margin-left:auto}
+.api-code{padding:16px 18px;font-family:monospace;font-size:.78rem;color:#A5F3FC;line-height:1.8;overflow-x:auto}
+
+/* ═══════════════════════ RESPONSIVE ════════════════════════ */
+@media(max-width:900px){
+  .auth-left{display:none}.auth-right{width:100%}
+  .metrics-grid{grid-template-columns:1fr 1fr}
+  .map-container-split{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+@media(max-width:600px){
+  .providers-grid{grid-template-columns:1fr}
+  .metrics-grid{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr}
+  .page{padding:16px}
+}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+
+<!-- ══════════════════════════════════════════════ LOCATION GATE -->
+<div id="loc-gate">
+  <div class="loc-card">
+    <div class="loc-icon">📍</div>
+    <div class="loc-title">Enable Your Location</div>
+    <div class="loc-desc">ExpertEase needs your GPS location to show nearby service professionals and calculate accurate distances in real time.</div>
+    <div class="loc-features">
+      <div class="loc-feature"><div class="loc-feature-icon">🔍</div><div>Find verified providers closest to you</div></div>
+      <div class="loc-feature"><div class="loc-feature-icon">🗺️</div><div>Real-time map with live directions</div></div>
+      <div class="loc-feature"><div class="loc-feature-icon">⚡</div><div>Get the fastest response times</div></div>
+    </div>
+    <button class="btn btn-primary btn-lg btn-full" onclick="requestLocation()" id="loc-btn">📍 Allow Location Access</button>
+    <div class="loc-loading hidden" id="loc-loading">
+      <div class="loc-spinner"></div>
+      <span>Getting your location…</span>
+    </div>
+    <div style="margin-top:14px;text-align:center">
+      <span style="color:rgba(255,255,255,.3);font-size:.75rem">Your location is used only to find nearby services</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ AUTH SCREEN -->
+<div id="auth-screen" class="hidden">
+  <div class="auth-left">
+    <div class="auth-brand">Expert<span>Ease</span></div>
+    <div class="auth-tagline">On-demand mechanical & plumbing services</div>
+    <div class="auth-feature">
+      <div class="auth-feature-dot"></div>
+      <div><div class="auth-feature-title">GPS-Powered Discovery</div><div class="auth-feature-desc">Find verified professionals within minutes of your location</div></div>
+    </div>
+    <div class="auth-feature">
+      <div class="auth-feature-dot"></div>
+      <div><div class="auth-feature-title">AI-Assisted Support</div><div class="auth-feature-desc">Get instant answers to pricing, availability and service queries</div></div>
+    </div>
+    <div class="auth-feature">
+      <div class="auth-feature-dot"></div>
+      <div><div class="auth-feature-title">Live Tracking</div><div class="auth-feature-desc">Track your provider from acceptance to arrival in real time</div></div>
+    </div>
+    <div class="auth-feature">
+      <div class="auth-feature-dot"></div>
+      <div><div class="auth-feature-title">Verified & Trusted</div><div class="auth-feature-desc">Every provider is manually approved by our admin team</div></div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div style="font-family:var(--font-head);font-size:1.8rem;font-weight:900;color:var(--ink);margin-bottom:4px">Welcome 👋</div>
+    <div style="color:var(--muted);font-size:.9rem;margin-bottom:28px">Sign in or create your account</div>
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Create Account</button>
+    </div>
+    <div id="auth-form-container"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ MAIN APP -->
+<div id="app" class="hidden">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">Expert<span>Ease</span></div>
+    <div class="topbar-loc" onclick="showLocationDetail()">
+      <span class="topbar-loc-icon">📍</span>
+      <span class="topbar-loc-text" id="topbar-loc-text">Detecting location…</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-sm btn-ghost icon-btn btn-icon-lg" onclick="toggleNotifications()" style="position:relative">
+        🔔<span class="notif-badge hidden" id="notif-badge"></span>
+      </button>
+      <div class="topbar-avatar avatar-ring" id="topbar-avatar" onclick="toggleUserMenu()">U</div>
+    </div>
+  </div>
+
+  <!-- USER DROPDOWN -->
+  <div class="overlay hidden" id="user-menu-overlay" onclick="toggleUserMenu()" style="background:transparent;align-items:flex-start;justify-content:flex-end;padding:70px 16px 0">
+    <div class="card" style="width:220px;padding:8px;animation:slideUp .2s ease" onclick="event.stopPropagation()">
+      <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">
+        <div style="font-weight:700;font-size:.9rem" id="menu-name">User</div>
+        <div style="font-size:.75rem;color:var(--muted)" id="menu-email">—</div>
+        <div id="menu-role-badge" style="margin-top:6px"></div>
+      </div>
+      <div onclick="navigateTo('dashboard');toggleUserMenu()" style="padding:9px 14px;border-radius:var(--r-sm);cursor:pointer;font-size:.87rem;transition:background var(--transition)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">📊 Dashboard</div>
+      <div onclick="navigateTo('profile');toggleUserMenu()" style="padding:9px 14px;border-radius:var(--r-sm);cursor:pointer;font-size:.87rem;transition:background var(--transition)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">👤 Profile</div>
+      <div id="admin-menu-item" class="hidden" onclick="navigateTo('admin');toggleUserMenu()" style="padding:9px 14px;border-radius:var(--r-sm);cursor:pointer;font-size:.87rem;transition:background var(--transition)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">🛡️ Admin Panel</div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:6px 0"/>
+      <div onclick="logout()" style="padding:9px 14px;border-radius:var(--r-sm);cursor:pointer;font-size:.87rem;color:var(--rose);transition:background var(--transition)" onmouseover="this.style.background='var(--rose-light)'" onmouseout="this.style.background=''">🚪 Sign Out</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar"></div>
+    <!-- MAIN CONTENT -->
+    <div class="main" id="main-content">
+      <!-- Customer Pages -->
+      <div id="page-dashboard" class="page"></div>
+      <div id="page-find" class="page"></div>
+      <div id="page-map" class="page"></div>
+      <div id="page-bookings" class="page"></div>
+      <div id="page-chat" class="page"></div>
+      <div id="page-profile" class="page"></div>
+      <!-- Provider Pages -->
+      <div id="page-prov-dashboard" class="page"></div>
+      <div id="page-prov-requests" class="page"></div>
+      <div id="page-prov-profile" class="page"></div>
+      <!-- Admin Pages -->
+      <div id="page-admin-dashboard" class="page"></div>
+      <div id="page-admin-users" class="page"></div>
+      <div id="page-admin-providers" class="page"></div>
+      <div id="page-admin-api" class="page"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modal-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  location: null,
+  address: '',
+  user: null,
+  token: null,
+  role: 'customer',
+  currentPage: '',
+  providerAvailable: true,
+  chatMessages: [],
+  bookings: [],
+  jobRequests: [],
+  notifications: [],
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  MOCK DATA
+// ═══════════════════════════════════════════════════════════════
+const PROVIDERS = [
+  {id:'p1',name:'Rajesh Kumar',initials:'RK',type:'Mechanic',role:'Senior Auto Mechanic',exp:'8 yrs',rating:4.9,reviews:247,dist:1.2,eta:12,price:299,available:true,lat:17.385,lng:78.487,tags:['Engine','AC Repair','Diagnostics'],jobs:312,phone:'9876540001',color:'teal'},
+  {id:'p2',name:'Priya Sharma',initials:'PS',type:'Plumber',role:'Expert Plumber & Fitter',exp:'6 yrs',rating:4.8,reviews:189,dist:0.8,eta:8,price:249,available:true,lat:17.390,lng:78.480,tags:['Pipe Repair','Drainage','Water Heater'],jobs:198,phone:'9876540002',color:'amber'},
+  {id:'p3',name:'Amit Singh',initials:'AS',type:'Mechanic',role:'Certified Auto Mechanic',exp:'10 yrs',rating:4.7,reviews:312,dist:2.1,eta:20,price:349,available:false,lat:17.380,lng:78.495,tags:['Transmission','Electrical','Engine'],jobs:421,phone:'9876540003',color:'blue'},
+  {id:'p4',name:'Lakshmi Devi',initials:'LD',type:'Plumber',role:'Senior Plumbing Expert',exp:'4 yrs',rating:4.6,reviews:98,dist:3.2,eta:28,price:199,available:true,lat:17.395,lng:78.490,tags:['Emergency','Renovation'],jobs:124,phone:'9876540004',color:'purple'},
+  {id:'p5',name:'Venkat Rao',initials:'VR',type:'Mechanic',role:'Master Auto Technician',exp:'12 yrs',rating:4.8,reviews:420,dist:1.8,eta:16,price:399,available:true,lat:17.378,lng:78.483,tags:['All Makes','Bodywork'],jobs:510,phone:'9876540005',color:'teal'},
+  {id:'p6',name:'Pooja Nair',initials:'PN',type:'Plumber',role:'Plumber & Sanitation Expert',exp:'5 yrs',rating:4.5,reviews:76,dist:4.1,eta:35,price:179,available:true,lat:17.400,lng:78.478,tags:['Fitting','Bore Well'],jobs:89,phone:'9876540006',color:'amber'},
+];
+
+const MOCK_USERS = [
+  {id:'u1',name:'Admin User',email:'admin@ee.com',password:'admin123',role:'admin',avatar:'AU',phone:'9000000001',city:'Hyderabad',joinDate:'2024-01-10'},
+  {id:'u2',name:'Demo Customer',email:'demo@ee.com',password:'demo123',role:'customer',avatar:'DC',phone:'9000000002',city:'Hyderabad',joinDate:'2024-03-15'},
+  {id:'u3',name:'Rajesh Kumar',email:'rajesh@ee.com',password:'provider123',role:'provider',avatar:'RK',phone:'9876540001',city:'Hyderabad',joinDate:'2024-02-20',approved:true,serviceType:'Mechanic',pricePerHour:299},
+  {id:'u4',name:'New Provider',email:'new@ee.com',password:'new123',role:'provider',avatar:'NP',phone:'9000000004',city:'Secunderabad',joinDate:'2024-04-01',approved:false,serviceType:'Plumber',pricePerHour:199},
+];
+
+let mapInstance=null, trackInterval=null, providerMarkers={};
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILITY
+// ═══════════════════════════════════════════════════════════════
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = {success:'✅', error:'❌', info:'ℹ️', warning:'⚠️'};
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+function showModal(html) {
+  const c = document.getElementById('modal-container');
+  c.innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">${html}</div>`;
+}
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+function t(ms) { return new Promise(r => setTimeout(r, ms)); }
+function now() { return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+function formatDate(d) { return new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
+function stars(n) { return '★'.repeat(Math.floor(n)) + (n%1 ? '½' : '') + '☆'.repeat(Math.max(0,5-Math.ceil(n))); }
+
+// ═══════════════════════════════════════════════════════════════
+//  LOCATION
+// ═══════════════════════════════════════════════════════════════
+function requestLocation() {
+  const btn = document.getElementById('loc-btn');
+  const loading = document.getElementById('loc-loading');
+  btn.classList.add('hidden');
+  loading.classList.remove('hidden');
+  if (!navigator.geolocation) {
+    useFallbackLocation();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      S.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      reverseGeocode(S.location);
+    },
+    () => useFallbackLocation(),
+    { timeout: 8000 }
+  );
+}
+function useFallbackLocation() {
+  S.location = { lat: 17.385, lng: 78.487 };
+  S.address = 'Uppal, Hyderabad, Telangana';
+  updateLocationDisplay();
+  onLocationGranted();
+}
+async function reverseGeocode(loc) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lng}&format=json`);
+    const d = await r.json();
+    S.address = d.display_name?.split(',').slice(0,3).join(', ') || 'Your Location';
+  } catch {
+    S.address = `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+  }
+  updateLocationDisplay();
+  onLocationGranted();
+}
+function updateLocationDisplay() {
+  const el = document.getElementById('topbar-loc-text');
+  if (el) el.textContent = S.address;
+}
+function onLocationGranted() {
+  document.getElementById('loc-gate').classList.add('hidden');
+  const saved = sessionStorage.getItem('ee_user');
+  if (saved) {
+    try { S.user = JSON.parse(saved); S.token = sessionStorage.getItem('ee_token'); onAuthSuccess(S.user, false); return; } catch {}
+  }
+  document.getElementById('auth-screen').classList.remove('hidden');
+  switchAuthTab('login');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════════════
+let authMode = 'login', regRole = 'customer';
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&mode==='login')||(i===1&&mode==='register')));
+  const c = document.getElementById('auth-form-container');
+  if (mode === 'login') {
+    c.innerHTML = `
+      <div class="field"><label>Email Address</label>
+        <div class="input-icon"><span class="i-icon">✉️</span><input class="input" id="l-email" type="email" placeholder="your@email.com" value="demo@ee.com"/></div></div>
+      <div class="field"><label>Password</label>
+        <div class="input-icon"><span class="i-icon">🔒</span><input class="input" id="l-pass" type="password" placeholder="••••••••" value="demo123"/></div></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:20px"><a style="font-size:.82rem;color:var(--teal);cursor:pointer;font-weight:500">Forgot password?</a></div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()">Sign In →</button>
+      <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:var(--r);font-size:.78rem;color:var(--muted)">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--slate)">Demo accounts:</div>
+        <div>👤 Customer: demo@ee.com / demo123</div>
+        <div>🔧 Provider: rajesh@ee.com / provider123</div>
+        <div>🛡️ Admin: admin@ee.com / admin123</div>
+      </div>`;
+  } else {
+    c.innerHTML = `
+      <div style="margin-bottom:18px">
+        <div style="font-size:.78rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">I am a…</div>
+        <div class="role-select">
+          <div class="role-card ${regRole==='customer'?'active':''}" onclick="setRegRole('customer')"><div class="role-icon">👤</div><div class="role-name">Customer</div></div>
+          <div class="role-card ${regRole==='provider'?'active':''}" onclick="setRegRole('provider')"><div class="role-icon">🔧</div><div class="role-name">Provider</div></div>
+          <div class="role-card ${regRole==='admin'?'active':''}" onclick="setRegRole('admin')"><div class="role-icon">🛡️</div><div class="role-name">Admin</div></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Full Name</label><input class="input" id="r-name" placeholder="Your full name"/></div>
+        <div class="field"><label>Phone</label><input class="input" id="r-phone" placeholder="9876543210"/></div>
+      </div>
+      <div class="field"><label>Email</label><input class="input" id="r-email" type="email" placeholder="your@email.com"/></div>
+      <div class="field"><label>City</label><input class="input" id="r-city" placeholder="Hyderabad"/></div>
+      ${regRole==='provider'?`
+      <div class="field-row">
+        <div class="field"><label>Service Type</label><select class="input" id="r-service"><option>Mechanic</option><option>Plumber</option></select></div>
+        <div class="field"><label>Experience (years)</label><input class="input" id="r-exp" type="number" placeholder="5" min="0"/></div>
+      </div>
+      <div class="field"><label>Price per Hour (₹)</label><input class="input" id="r-price" type="number" placeholder="299"/></div>`:''}
+      <div class="field-row">
+        <div class="field"><label>Password</label><input class="input" id="r-pass" type="password" placeholder="••••••••"/></div>
+        <div class="field"><label>Confirm Password</label><input class="input" id="r-pass2" type="password" placeholder="••••••••"/></div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="doRegister()">Create Account →</button>`;
+  }
+}
+function setRegRole(role) { regRole = role; switchAuthTab('register'); }
+
+function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const user = MOCK_USERS.find(u => u.email === email && u.password === pass);
+  if (!user) { toast('Invalid email or password', 'error'); return; }
+  onAuthSuccess(user, true);
+}
+function doRegister() {
+  const name = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const phone = document.getElementById('r-phone').value.trim();
+  const city = document.getElementById('r-city').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const pass2 = document.getElementById('r-pass2').value;
+  if (!name||!email||!phone||!pass) { toast('Please fill all required fields','error'); return; }
+  if (pass !== pass2) { toast('Passwords do not match','error'); return; }
+  if (MOCK_USERS.find(u => u.email===email)) { toast('Email already registered','error'); return; }
+  const init = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  const newUser = {
+    id:'u'+Date.now(), name, email, password:pass, role:regRole,
+    avatar:init, phone, city, joinDate:new Date().toISOString().split('T')[0],
+    approved: regRole === 'provider' ? false : true,
+    serviceType: regRole==='provider' ? document.getElementById('r-service')?.value : undefined,
+    pricePerHour: regRole==='provider' ? Number(document.getElementById('r-price')?.value)||299 : undefined,
+  };
+  MOCK_USERS.push(newUser);
+  onAuthSuccess(newUser, true);
+}
+function onAuthSuccess(user, save=true) {
+  S.user = user; S.role = user.role;
+  S.token = 'mock_jwt_' + user.id + '_' + Date.now();
+  if (save) {
+    sessionStorage.setItem('ee_user', JSON.stringify(user));
+    sessionStorage.setItem('ee_token', S.token);
+  }
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initApp();
+  toast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, 'success');
+}
+function logout() {
+  sessionStorage.clear(); S.user = null; S.token = null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  toggleUserMenu(); switchAuthTab('login');
+  toast('Signed out successfully','info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  APP INIT
+// ═══════════════════════════════════════════════════════════════
+function initApp() {
+  // Topbar avatar
+  document.getElementById('topbar-avatar').textContent = S.user.avatar;
+  document.getElementById('topbar-loc-text').textContent = S.address || 'Detecting…';
+  // User menu
+  document.getElementById('menu-name').textContent = S.user.name;
+  document.getElementById('menu-email').textContent = S.user.email;
+  document.getElementById('menu-role-badge').innerHTML = `<span class="chip ${S.role==='admin'?'chip-rose':S.role==='provider'?'chip-amber':'chip-teal'}">${S.role==='admin'?'🛡️ Admin':S.role==='provider'?'🔧 Provider':'👤 Customer'}</span>`;
+  if (S.role === 'admin') document.getElementById('admin-menu-item').classList.remove('hidden');
+  buildSidebar();
+  if (S.role === 'customer') navigateTo('dashboard');
+  else if (S.role === 'provider') navigateTo('prov-dashboard');
+  else navigateTo('admin-dashboard');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════════════════════════════════
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  const customerNav = [
+    {id:'dashboard',icon:'🏠',label:'Home'},
+    {id:'find',icon:'🔍',label:'Find Services'},
+    {id:'map',icon:'🗺️',label:'Map View'},
+    {id:'bookings',icon:'📋',label:'My Bookings'},
+    {id:'chat',icon:'🤖',label:'AI Assistant'},
+    {id:'profile',icon:'👤',label:'Profile'},
+  ];
+  const providerNav = [
+    {id:'prov-dashboard',icon:'🏠',label:'Dashboard'},
+    {id:'prov-requests',icon:'📥',label:'Job Requests'},
+    {id:'prov-profile',icon:'👤',label:'My Profile'},
+  ];
+  const adminNav = [
+    {id:'admin-dashboard',icon:'📊',label:'Overview'},
+    {id:'admin-users',icon:'👥',label:'Customers'},
+    {id:'admin-providers',icon:'🔧',label:'Providers'},
+    {id:'admin-api',icon:'⚙️',label:'API & MongoDB'},
+  ];
+  const navItems = S.role==='customer' ? customerNav : S.role==='provider' ? providerNav : adminNav;
+  sb.innerHTML = navItems.map(n => `
+    <div class="nav-item" id="nav-${n.id}" onclick="navigateTo('${n.id}')">
+      <span class="nav-icon">${n.icon}</span>${n.label}
+    </div>`).join('') + `<div class="nav-divider"></div>
+    <div class="nav-item" onclick="logout()" style="color:var(--rose);margin-top:auto">
+      <span class="nav-icon">🚪</span>Sign Out
+    </div>`;
+}
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`)?.classList.add('active');
+  document.getElementById(`nav-${page}`)?.classList.add('active');
+  S.currentPage = page;
+  renderPage(page);
+}
+function toggleUserMenu() {
+  document.getElementById('user-menu-overlay').classList.toggle('hidden');
+}
+function toggleNotifications() {
+  toast('No new notifications', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PAGE RENDERER
+// ═══════════════════════════════════════════════════════════════
+function renderPage(page) {
+  const renderers = {
+    'dashboard': renderCustomerDashboard,
+    'find': renderFindServices,
+    'map': renderMapPage,
+    'bookings': renderBookings,
+    'chat': renderAIChat,
+    'profile': renderProfile,
+    'prov-dashboard': renderProviderDashboard,
+    'prov-requests': renderProviderRequests,
+    'prov-profile': renderProviderProfile,
+    'admin-dashboard': renderAdminDashboard,
+    'admin-users': renderAdminUsers,
+    'admin-providers': renderAdminProviders,
+    'admin-api': renderAdminAPI,
+  };
+  renderers[page]?.();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CUSTOMER DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderCustomerDashboard() {
+  const p = document.getElementById('page-dashboard');
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  p.innerHTML = `
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--ink)">${greeting}, ${S.user.name.split(' ')[0]} 👋</div>
+      <div style="color:var(--muted);font-size:.9rem;margin-top:4px">What service do you need today?</div>
+    </div>
+    <div class="location-bar fade-in">
+      <div class="loc-pulse"><div class="loc-pulse-ring"></div><div class="loc-pulse-dot"></div></div>
+      <div class="loc-text">
+        <div class="loc-label">Your current location</div>
+        <div class="loc-address">${S.address}</div>
+        <div class="loc-coords">${S.location?.lat?.toFixed(4)||'—'}, ${S.location?.lng?.toFixed(4)||'—'}</div>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="toast('Location refreshed','info')">🔄 Refresh</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="dash-search" placeholder="Search by service (e.g. plumber, mechanic) or area…" oninput="onDashSearch(this.value)" onkeydown="if(event.key==='Enter')navigateTo('find')"/>
+      <div class="search-right">
+        <button class="search-filter-btn" onclick="navigateTo('find')">Search</button>
+      </div>
+    </div>
+    <div class="category-scroll">
+      ${[['🔧','Mechanic'],['🔩','Plumber'],['⚡','Electrician'],['❄️','AC Repair'],['🚿','Bathroom'],['🚗','Car Service'],['🏠','Home Repair'],['🔥','Gas/Pipe']].map(([ic,lb])=>`<div class="cat-chip" onclick="filterByCategory('${lb}')">${ic} ${lb}</div>`).join('')}
+    </div>
+    <div class="section-header">
+      <div><div class="section-title">Nearby Providers</div><div class="section-sub">Sorted by distance from you</div></div>
+      <span class="section-action" onclick="navigateTo('find')">View all →</span>
+    </div>
+    <div class="providers-grid" id="dash-providers">${renderProviderCards(PROVIDERS.slice(0,4))}</div>`;
+}
+function onDashSearch(v) { if (v.length > 2) { /* filter providers */ } }
+function filterByCategory(cat) {
+  navigateTo('find');
+  setTimeout(() => {
+    const inp = document.getElementById('find-search');
+    if (inp) { inp.value = cat; filterProviders(cat); }
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FIND SERVICES
+// ═══════════════════════════════════════════════════════════════
+function renderFindServices() {
+  const p = document.getElementById('page-find');
+  p.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">Find Services</div><div class="section-sub">All verified providers near ${S.address}</div></div>
+    </div>
+    <div class="location-bar fade-in" style="margin-bottom:20px">
+      <div class="loc-pulse"><div class="loc-pulse-ring"></div><div class="loc-pulse-dot"></div></div>
+      <div class="loc-text">
+        <div class="loc-label">Searching from</div>
+        <div class="loc-address">${S.address}</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="find-search" placeholder="Service type or provider name…" oninput="filterProviders(this.value)"/>
+      <div class="search-right"><button class="search-filter-btn" onclick="navigateTo('map')">🗺️ Map View</button></div>
+    </div>
+    <div class="category-scroll" id="find-cats">
+      <div class="cat-chip active" data-cat="all" onclick="setCat(this,'all')">✨ All</div>
+      ${[['🔧','Mechanic'],['🔩','Plumber']].map(([ic,lb])=>`<div class="cat-chip" data-cat="${lb}" onclick="setCat(this,'${lb}')">${ic} ${lb}</div>`).join('')}
+      <div class="cat-chip" data-cat="available" onclick="setCat(this,'available')">🟢 Available Now</div>
+    </div>
+    <div id="find-results"><div class="providers-grid" id="providers-list">${renderProviderCards(PROVIDERS)}</div></div>`;
+}
+let currentCat = 'all';
+function setCat(el, cat) {
+  currentCat = cat;
+  document.querySelectorAll('#find-cats .cat-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  filterProviders(document.getElementById('find-search')?.value||'');
+}
+function filterProviders(q='') {
+  let list = [...PROVIDERS];
+  if (currentCat === 'Mechanic') list = list.filter(p=>p.type==='Mechanic');
+  else if (currentCat === 'Plumber') list = list.filter(p=>p.type==='Plumber');
+  else if (currentCat === 'available') list = list.filter(p=>p.available);
+  if (q) list = list.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.type.toLowerCase().includes(q.toLowerCase())||p.tags.some(t=>t.toLowerCase().includes(q.toLowerCase())));
+  list.sort((a,b)=>a.dist-b.dist);
+  const el = document.getElementById('providers-list');
+  if (el) el.innerHTML = list.length ? renderProviderCards(list) : `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">No providers found matching your search.</div>`;
+}
+
+function renderProviderCards(list) {
+  return list.map(p=>`
+    <div class="card card-hover provider-card fade-in" onclick="openProviderModal('${p.id}')">
+      <div class="pc-top">
+        <div class="pc-avatar ${p.color}">${p.initials}<span class="pc-status ${p.available?'available':'busy'}"></span></div>
+        <div class="pc-info">
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-role">${p.role}</div>
+          <div class="pc-tags">${[p.available?'<span class="chip chip-green"><span class="dot dot-green"></span>Available</span>':'<span class="chip chip-amber"><span class="dot dot-amber"></span>Busy</span>',...p.tags.slice(0,2).map(t=>`<span class="chip chip-ghost">${t}</span>`)].join('')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:var(--font-head);font-weight:900;color:var(--ink);font-size:1.05rem">₹${p.price}<span style="font-size:.65rem;font-weight:400;color:var(--muted)">/hr</span></div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${p.exp} exp</div>
+        </div>
+      </div>
+      <div class="pc-meta">
+        <div class="pc-meta-item"><div class="pc-meta-val" style="color:#FBBF24">${p.rating}★</div><div class="pc-meta-label">${p.reviews} reviews</div></div>
+        <div class="pc-meta-item"><div class="pc-meta-val">${p.dist}km</div><div class="pc-meta-label">distance</div></div>
+        <div class="pc-meta-item"><div class="pc-meta-val">~${p.eta}m</div><div class="pc-meta-label">ETA</div></div>
+      </div>
+      <div class="pc-actions">
+        <button class="btn btn-primary" style="flex:1" onclick="event.stopPropagation();openBookModal('${p.id}')">Book Now</button>
+        <button class="btn btn-outline btn-icon-lg" title="Chat" onclick="event.stopPropagation();openChat('${p.id}')">💬</button>
+        <button class="btn btn-outline btn-icon-lg" title="Track on Map" onclick="event.stopPropagation();openMapTrack('${p.id}')">📍</button>
+      </div>
+    </div>`).join('');
+}
+
+function openProviderModal(pid) {
+  const p = PROVIDERS.find(x=>x.id===pid);
+  if (!p) return;
+  showModal(`
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div class="pc-avatar ${p.color}" style="width:60px;height:60px;font-size:1.3rem;border-radius:14px">${p.initials}</div>
+            <div>
+              <div class="modal-title">${p.name}</div>
+              <div class="modal-sub">${p.role} · ${p.exp} experience</div>
+            </div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+          ${p.available?'<span class="chip chip-green"><span class="dot dot-green"></span>Available Now</span>':'<span class="chip chip-amber"><span class="dot dot-amber"></span>Currently Busy</span>'}
+          ${p.tags.map(t=>`<span class="chip chip-ghost">${t}</span>`).join('')}
+        </div>
+        <div class="grid-3" style="margin-bottom:20px">
+          <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:var(--r)">
+            <div style="font-family:var(--font-head);font-weight:900;font-size:1.3rem;color:#FBBF24">${p.rating}★</div>
+            <div style="font-size:.72rem;color:var(--muted)">${p.reviews} reviews</div>
+          </div>
+          <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:var(--r)">
+            <div style="font-family:var(--font-head);font-weight:900;font-size:1.3rem">${p.dist}km</div>
+            <div style="font-size:.72rem;color:var(--muted)">from you</div>
+          </div>
+          <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:var(--r)">
+            <div style="font-family:var(--font-head);font-weight:900;font-size:1.3rem">${p.jobs}</div>
+            <div style="font-size:.72rem;color:var(--muted)">jobs done</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;padding:16px;background:var(--surface2);border-radius:var(--r)">
+          <div style="font-size:.78rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Details</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${[['Service Type',p.type],['Price',`₹${p.price}/hour`],['Experience',p.exp],['ETA',`~${p.eta} minutes`],['Phone',p.phone]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:.87rem"><span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="closeModal();openBookModal('${p.id}')">📋 Book Now</button>
+          <button class="btn btn-outline" onclick="closeModal();openChat('${p.id}')">💬 Chat</button>
+          <button class="btn btn-outline" onclick="closeModal();openMapTrack('${p.id}')">📍 Track</button>
+        </div>
+      </div>
+    </div>`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BOOKING MODAL
+// ═══════════════════════════════════════════════════════════════
+function openBookModal(pid) {
+  if (!S.user) { toast('Please sign in first','error'); return; }
+  const p = PROVIDERS.find(x=>x.id===pid);
+  if (!p) return;
+  const fee = 29, visit = Math.round(p.dist*20), total = p.price + fee + visit;
+  showModal(`
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <div><div class="modal-title">Book ${p.name}</div><div class="modal-sub">${p.role}</div></div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:var(--r);margin-bottom:20px">
+          <div class="pc-avatar ${p.color}" style="width:44px;height:44px;font-size:.95rem;border-radius:10px">${p.initials}</div>
+          <div style="flex:1"><div style="font-weight:700">${p.name}</div><div style="font-size:.8rem;color:var(--muted)">${'★'.repeat(Math.floor(p.rating))} ${p.rating} · ${p.reviews} reviews</div></div>
+          <div style="text-align:right"><div style="font-family:var(--font-head);font-weight:900;font-size:1.1rem">₹${p.price}/hr</div><div style="font-size:.72rem;color:var(--green)">~${p.eta} min ETA</div></div>
+        </div>
+        <div class="field"><label>Service Type</label>
+          <select class="input" id="b-service">${p.tags.map(t=>`<option>${t}</option>`).join('')}<option>General ${p.type} Service</option></select></div>
+        <div class="field-row">
+          <div class="field"><label>Preferred Date</label><input class="input" id="b-date" type="date" min="${new Date().toISOString().split('T')[0]}" value="${new Date().toISOString().split('T')[0]}"/></div>
+          <div class="field"><label>Preferred Time</label><input class="input" id="b-time" type="time" value="10:00"/></div>
+        </div>
+        <div class="field"><label>Service Address</label><input class="input" id="b-addr" placeholder="Full address…" value="${S.address}"/></div>
+        <div class="field"><label>Problem Description</label><textarea class="input" id="b-desc" rows="2" placeholder="Briefly describe the issue…"></textarea></div>
+        <div style="background:var(--surface2);border-radius:var(--r);padding:16px;margin-bottom:20px">
+          ${[['Service Charge (1 hr)',`₹${p.price}`],['Platform Fee',`₹${fee}`],['Visit Charge',`₹${visit}`]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:.85rem;padding:4px 0"><span style="color:var(--muted)">${k}</span><span>${v}</span></div>`).join('')}
+          <div style="display:flex;justify-content:space-between;font-size:.92rem;font-weight:700;padding:10px 0 0;border-top:1px solid var(--border);margin-top:8px"><span>Estimated Total</span><span>₹${total}</span></div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="confirmBook('${p.id}')">Confirm Booking →</button>
+      </div>
+    </div>`);
+}
+function confirmBook(pid) {
+  const p = PROVIDERS.find(x=>x.id===pid);
+  const service = document.getElementById('b-service')?.value;
+  const date = document.getElementById('b-date')?.value;
+  const addr = document.getElementById('b-addr')?.value;
+  if (!date||!addr) { toast('Fill all required fields','error'); return; }
+  const booking = {id:'bk'+Date.now(), providerId:pid, providerName:p.name, service, date, address:addr, status:'pending', amount: p.price+29+Math.round(p.dist*20)};
+  S.bookings.push(booking);
+  closeModal();
+  toast(`Booking confirmed with ${p.name}! 🎉`, 'success');
+  setTimeout(()=>showConfirmBooking(p, booking), 300);
+}
+function showConfirmBooking(p, bk) {
+  showModal(`
+    <div class="modal" style="max-width:460px;text-align:center">
+      <div class="modal-body" style="padding:40px">
+        <div style="font-size:4rem;margin-bottom:16px">✅</div>
+        <div class="modal-title" style="text-align:center;margin-bottom:6px">Booking Confirmed!</div>
+        <div style="color:var(--muted);font-size:.88rem;margin-bottom:24px">Your request has been sent to ${p.name}</div>
+        <div style="background:var(--teal-glow);border-radius:var(--r);padding:16px;text-align:left;margin-bottom:24px">
+          <div style="font-size:.8rem;color:var(--teal-dark);font-weight:700;margin-bottom:8px">BOOKING DETAILS</div>
+          ${[['Service', bk.service],['Date', formatDate(bk.date)],['Provider', p.name],['Amount', `₹${bk.amount}`]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0"><span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('')}
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-primary" onclick="closeModal();navigateTo('map');setTimeout(()=>trackOnMap('${p.id}'),400)">📍 Track Provider</button>
+          <button class="btn btn-outline" onclick="closeModal();navigateTo('bookings')">View Bookings</button>
+        </div>
+      </div>
+    </div>`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAP PAGE
+// ═══════════════════════════════════════════════════════════════
+function renderMapPage() {
+  const p = document.getElementById('page-map');
+  p.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">Map View</div><div class="section-sub">Providers around you in real time</div></div>
+    </div>
+    <div class="location-bar fade-in" style="margin-bottom:16px">
+      <div class="loc-pulse"><div class="loc-pulse-ring"></div><div class="loc-pulse-dot"></div></div>
+      <div class="loc-text"><div class="loc-label">Your location</div><div class="loc-address">${S.address}</div></div>
+    </div>
+    <div class="map-container-split">
+      <div id="map-view"></div>
+      <div class="map-list" id="map-sidebar-list"></div>
+    </div>
+    <div class="tracking-bar" id="track-bar">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);animation:pulse 1.5s infinite"></div>
+          <span style="color:#fff;font-weight:700;font-size:.95rem">Tracking: <span id="track-name">—</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="color:rgba(255,255,255,.5);font-size:.82rem" id="track-eta">ETA: calculating…</span>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="stopTracking()">Stop ×</button>
+        </div>
+      </div>
+      <div class="tracking-progress">
+        ${['Booked','Accepted','On the way','Arrived','Complete'].map((label,i,arr)=>`
+          <div class="t-node">
+            <div class="t-dot ${i<2?'done':i===2?'current':''}" id="tdot-${i}">${i<2?'✓':i+1}</div>
+            <div class="t-label ${i<2?'done':i===2?'current':''}" id="tlabel-${i}">${label}</div>
+          </div>
+          ${i<arr.length-1?`<div class="t-line ${i<2?'done':''}" id="tline-${i}"></div>`:''}`).join('')}
+      </div>
+    </div>`;
+  setTimeout(() => { initMapView(); renderMapList(); }, 100);
+}
+function initMapView() {
+  if (!S.location) return;
+  const lat = S.location.lat, lng = S.location.lng;
+  if (mapInstance) { mapInstance.remove(); mapInstance=null; }
+  const m = L.map('map-view').setView([lat, lng], 14);
+  mapInstance = m;
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(m);
+  // User marker
+  const uIcon = L.divIcon({html:`<div style="background:var(--ink,#0D0F14);width:16px;height:16px;border-radius:50%;border:3px solid var(--teal,#00BFA5);box-shadow:0 0 0 4px rgba(0,191,165,.2)"></div>`,iconSize:[16,16],iconAnchor:[8,8],className:''});
+  L.marker([lat,lng],{icon:uIcon}).addTo(m).bindPopup('<b>📍 You are here</b>');
+  // Provider markers
+  PROVIDERS.forEach(p => {
+    const col = p.available ? '#00BFA5' : '#9CA3AF';
+    const icon = L.divIcon({html:`<div style="background:${col};border:2px solid #fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);cursor:pointer">${p.initials}</div>`,iconSize:[38,38],iconAnchor:[19,19],className:''});
+    const mk = L.marker([p.lat,p.lng],{icon}).addTo(m);
+    mk.bindPopup(`<div style="font-family:Satoshi,sans-serif;min-width:180px"><div style="font-weight:800;font-size:.95rem;margin-bottom:4px">${p.name}</div><div style="font-size:.78rem;color:#5A6A85;margin-bottom:6px">${p.role} · ${p.dist}km · ₹${p.price}/hr</div><div style="color:#FBBF24;font-size:.82rem;margin-bottom:8px">${'★'.repeat(Math.floor(p.rating))} ${p.rating}</div>${p.available?`<button onclick="openBookModal('${p.id}')" style="background:#00BFA5;color:#fff;border:none;padding:6px 14px;border-radius:8px;font-weight:700;cursor:pointer;width:100%">Book Now</button>`:'<div style="color:#9CA3AF;font-size:.78rem">Currently Unavailable</div>'}</div>`);
+    providerMarkers[p.id] = mk;
+  });
+}
+function renderMapList() {
+  const el = document.getElementById('map-sidebar-list');
+  if (!el) return;
+  el.innerHTML = PROVIDERS.map(p=>`
+    <div class="map-list-item" id="mli-${p.id}" onclick="focusMapProvider('${p.id}')">
+      <div class="map-list-avatar ${p.color}" style="background:linear-gradient(135deg,var(--teal,#00BFA5),var(--teal-dark,#009688))">${p.initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.87rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+        <div style="font-size:.75rem;color:var(--muted)">${p.dist}km · ₹${p.price}/hr · ~${p.eta}min</div>
+        <div style="font-size:.7rem;font-weight:700;color:${p.available?'var(--green)':'var(--muted)'}">${p.available?'● Available':'○ Busy'}</div>
+      </div>
+      ${p.available?`<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openBookModal('${p.id}')">Book</button>`:''}
+    </div>`).join('');
+}
+function focusMapProvider(id) {
+  if (!mapInstance) return;
+  const p = PROVIDERS.find(x=>x.id===id);
+  if (!p) return;
+  mapInstance.setView([p.lat,p.lng],15);
+  providerMarkers[id]?.openPopup();
+  document.querySelectorAll('.map-list-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`mli-${id}`)?.classList.add('active');
+}
+function openMapTrack(pid) {
+  navigateTo('map');
+  setTimeout(()=>trackOnMap(pid), 500);
+}
+function trackOnMap(pid) {
+  const p = PROVIDERS.find(x=>x.id===pid);
+  if (!p || !S.location) return;
+  const bar = document.getElementById('track-bar');
+  if (bar) { bar.classList.add('visible'); document.getElementById('track-name').textContent = p.name; document.getElementById('track-eta').textContent = `ETA: ~${p.eta} min`; }
+  if (!mapInstance) initMapView();
+  focusMapProvider(pid);
+  // Animate movement
+  if (trackInterval) clearInterval(trackInterval);
+  let lat = p.lat, lng = p.lng; const steps = 20;
+  const dLat = (S.location.lat - lat)/steps, dLng = (S.location.lng - lng)/steps;
+  const mvIcon = L.divIcon({html:`<div style="background:#FF8F00;border:2px solid #fff;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 10px rgba(0,0,0,.3)">🔧</div>`,iconSize:[38,38],iconAnchor:[19,19],className:''});
+  const mvMarker = L.marker([lat,lng],{icon:mvIcon}).addTo(mapInstance);
+  let step = 0;
+  trackInterval = setInterval(()=>{
+    step++; lat+=dLat; lng+=dLng;
+    mvMarker.setLatLng([lat,lng]);
+    const eta = Math.max(0, Math.round(p.eta*(1-step/steps)));
+    const etaEl = document.getElementById('track-eta');
+    if (etaEl) etaEl.textContent = eta>0?`ETA: ~${eta} min`:'Arrived! ✅';
+    if (step >= steps) {
+      clearInterval(trackInterval);
+      // Update tracking steps to arrived
+      ['tdot-3','tdot-4'].forEach(id=>{ const el=document.getElementById(id); if(el){el.className='t-dot done';el.textContent='✓';} });
+      ['tlabel-3','tlabel-4'].forEach(id=>{ const el=document.getElementById(id); if(el)el.className='t-label done'; });
+      ['tline-3'].forEach(id=>{ const el=document.getElementById(id); if(el)el.className='t-line done'; });
+      toast(`${p.name} has arrived! ✅`,'success');
+    }
+  }, 600);
+}
+function stopTracking() {
+  if (trackInterval) clearInterval(trackInterval);
+  const bar = document.getElementById('track-bar');
+  if (bar) bar.classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BOOKINGS PAGE
+// ═══════════════════════════════════════════════════════════════
+function renderBookings() {
+  const sampleBookings = [
+    {id:'b1',providerName:'Rajesh Kumar',service:'Engine Repair',date:'2025-03-28',status:'completed',amount:850},
+    {id:'b2',providerName:'Priya Sharma',service:'Pipe Leak Fix',date:'2025-04-01',status:'active',amount:450},
+    ...S.bookings
+  ];
+  const p = document.getElementById('page-bookings');
+  p.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">My Bookings</div><div class="section-sub">${sampleBookings.length} total bookings</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      ${['All','Active','Completed','Pending'].map(s=>`<button class="btn btn-sm ${s==='All'?'btn-primary':'btn-outline'}" onclick="filterBookings('${s.toLowerCase()}')">${s}</button>`).join('')}
+    </div>
+    <div id="bookings-list">
+    ${sampleBookings.length ? sampleBookings.map(b=>`
+      <div class="card" style="padding:20px;margin-bottom:12px;border-left:3px solid ${b.status==='completed'?'var(--green)':b.status==='active'?'var(--teal)':'var(--amber)'}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-weight:700;font-size:.95rem">${b.service}</div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:2px">With ${b.providerName} · ${formatDate(b.date)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--font-head);font-weight:800;font-size:1rem">₹${b.amount}</div>
+            <span class="chip ${b.status==='completed'?'chip-green':b.status==='active'?'chip-teal':'chip-amber'}" style="margin-top:4px">${b.status}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          ${b.status==='active'?`<button class="btn btn-sm btn-primary" onclick="openMapTrack('p1')">📍 Track</button>`:''}
+          ${b.status==='completed'?`<button class="btn btn-sm btn-outline" onclick="openRatingModal('${b.id}')">⭐ Rate</button>`:''}
+          ${b.status==='pending'||b.status==='active'?`<button class="btn btn-sm" style="background:var(--rose-light);color:var(--rose)" onclick="cancelBooking('${b.id}')">Cancel</button>`:''}
+          <button class="btn btn-sm btn-ghost" onclick="openChat('p1')">💬 Chat</button>
+        </div>
+      </div>`).join('') : `<div style="text-align:center;padding:60px;color:var(--muted)">No bookings yet. <a style="color:var(--teal);cursor:pointer;font-weight:600" onclick="navigateTo('find')">Find a service →</a></div>`}
+    </div>`;
+}
+function filterBookings(status) { toast(`Filtering: ${status}`, 'info'); }
+function cancelBooking(id) {
+  const bk = S.bookings.find(b=>b.id===id);
+  if (bk) bk.status='cancelled';
+  toast('Booking cancelled','info');
+  renderBookings();
+}
+function openRatingModal(id) {
+  let sel = 0;
+  showModal(`
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <div><div class="modal-title">Rate Your Experience</div><div class="modal-sub">How was the service?</div></div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center;margin:20px 0">
+          <div id="star-row" style="display:flex;gap:12px;justify-content:center;font-size:2.5rem">
+            ${[1,2,3,4,5].map(i=>`<span style="cursor:pointer;color:#E5E7EB;transition:all .15s" onmouseover="hoverStars(${i})" onmouseout="resetStars(${sel})" onclick="selStar(${i})" data-val="${i}">★</span>`).join('')}
+          </div>
+          <div style="margin-top:8px;font-size:.88rem;color:var(--muted)" id="star-label">Select rating</div>
+        </div>
+        <div class="field"><label>Your Review</label><textarea class="input" id="rev-text" rows="3" placeholder="Share your experience…"></textarea></div>
+        <button class="btn btn-primary btn-full" onclick="submitRating()">Submit Review</button>
+      </div>
+    </div>`);
+  window._selStar = 0;
+}
+function hoverStars(n){document.querySelectorAll('#star-row span').forEach((s,i)=>s.style.color=i<n?'#FBBF24':'#E5E7EB')}
+function resetStars(n){document.querySelectorAll('#star-row span').forEach((s,i)=>s.style.color=i<n?'#FBBF24':'#E5E7EB')}
+function selStar(n){window._selStar=n;resetStars(n);const labels=['','Poor','Fair','Good','Very Good','Excellent'];document.getElementById('star-label').textContent=labels[n];}
+function submitRating(){if(!window._selStar){toast('Select a rating','error');return;}closeModal();toast('Review submitted! Thank you ⭐','success');}
+
+// ═══════════════════════════════════════════════════════════════
+//  AI CHAT
+// ═══════════════════════════════════════════════════════════════
+const AI_RESPONSES = {
+  price: "Our service rates start from ₹179/hr for plumbing and ₹299/hr for mechanical work. The exact quote depends on the complexity of the job. You'll see the full estimate before confirming.",
+  availability: "Most of our verified providers are available within 10–30 minutes in Hyderabad. You can see real-time availability on each provider's card.",
+  booking: "Booking is simple! Just find a provider, tap 'Book Now', choose a date and time, describe your issue, and confirm. You'll get instant confirmation.",
+  track: "Yes! Once your provider accepts the booking, you can track their live GPS location on the map. You'll see step-by-step progress: Accepted → On the Way → Arrived.",
+  mechanic: "We have verified mechanics specializing in engine repair, AC service, electrical work, and general auto maintenance. Rajesh Kumar and Venkat Rao are top-rated in your area.",
+  plumber: "Our plumbers handle pipe leaks, drainage issues, water heaters, bathroom fitting, and more. Priya Sharma is highly rated and just 0.8 km from you!",
+  cancel: "You can cancel a booking before the provider reaches you — just go to 'My Bookings' and tap Cancel. Full refund applies if cancelled 30 minutes before.",
+  default: "I'm here to help! You can ask me about pricing, availability, service types, how to book, or how tracking works. What would you like to know?"
+};
+function getAIResponse(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('price')||m.includes('cost')||m.includes('charge')||m.includes('fee')) return AI_RESPONSES.price;
+  if (m.includes('available')||m.includes('availability')||m.includes('time')) return AI_RESPONSES.availability;
+  if (m.includes('book')||m.includes('schedule')||m.includes('appoint')) return AI_RESPONSES.booking;
+  if (m.includes('track')||m.includes('location')||m.includes('where')) return AI_RESPONSES.track;
+  if (m.includes('mechanic')||m.includes('car')||m.includes('vehicle')||m.includes('engine')) return AI_RESPONSES.mechanic;
+  if (m.includes('plumb')||m.includes('pipe')||m.includes('water')||m.includes('leak')) return AI_RESPONSES.plumber;
+  if (m.includes('cancel')||m.includes('refund')) return AI_RESPONSES.cancel;
+  return AI_RESPONSES.default;
+}
+function renderAIChat() {
+  const p = document.getElementById('page-chat');
+  p.innerHTML = `
+    <div class="section-header">
+      <div><div class="section-title">AI Assistant</div><div class="section-sub">Ask anything about our services</div></div>
+    </div>
+    <div class="chat-container">
+      <div class="chat-header">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal-dark));display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+        <div>
+          <div style="font-weight:700;font-size:.92rem">ExpertEase Assistant</div>
+          <div style="font-size:.75rem;color:var(--muted)">Powered by AI</div>
+        </div>
+        <span class="chat-ai-badge">AI</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px"><div class="dot dot-green"></div><span style="font-size:.75rem;color:var(--muted)">Online</span></div>
+      </div>
+      <div class="chat-quick">
+        ${['💰 Pricing info','📅 How to book','📍 Track provider','🔧 Find mechanic','🔩 Find plumber','❌ Cancel booking'].map(q=>`<button class="quick-btn" onclick="sendQuick('${q}')">${q}</button>`).join('')}
+      </div>
+      <div class="chat-messages" id="chat-msgs">
+        <div class="chat-msg ai"><div class="chat-bubble">👋 Hi ${S.user?.name?.split(' ')[0]||'there'}! I'm your ExpertEase AI assistant. I can help you with pricing, availability, booking, tracking providers, and more. How can I help you today?</div><div class="chat-time">${now()}</div></div>
+      </div>
+      <div class="chat-footer">
+        <input class="chat-input" id="chat-in" placeholder="Ask me anything about our services…" onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="btn btn-primary btn-icon-lg" onclick="sendChat()">→</button>
+      </div>
+    </div>`;
+}
+function openChat(pid) { navigateTo('chat'); }
+function sendQuick(q) { document.getElementById('chat-in').value=q.replace(/[^\w\s]/gi,'').trim(); sendChat(); }
+async function sendChat() {
+  const inp = document.getElementById('chat-in');
+  const text = inp.value.trim();
+  if (!text) return;
+  addChatMsg(text, 'user');
+  inp.value = '';
+  // Typing indicator
+  const box = document.getElementById('chat-msgs');
+  const typing = document.createElement('div');
+  typing.className='chat-msg ai';typing.id='typing';
+  typing.innerHTML='<div class="chat-typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  box.appendChild(typing);box.scrollTop=box.scrollHeight;
+  await t(800 + Math.random()*600);
+  typing.remove();
+  addChatMsg(getAIResponse(text), 'ai');
+}
+function addChatMsg(text, from) {
+  const box = document.getElementById('chat-msgs');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className=`chat-msg ${from} fade-in`;
+  el.innerHTML=`<div class="chat-bubble">${text}</div><div class="chat-time">${now()}</div>`;
+  box.appendChild(el);box.scrollTop=box.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROFILE
+// ═══════════════════════════════════════════════════════════════
+function renderProfile() {
+  const u = S.user;
+  const p = document.getElementById('page-profile');
+  p.innerHTML = `
+    <div class="section-title" style="margin-bottom:24px">My Profile</div>
+    <div class="profile-hero fade-in">
+      <div class="profile-avatar-xl" onclick="toast('Photo upload coming soon','info')">${u.avatar}</div>
+      <div class="profile-info">
+        <div class="profile-name">${u.name}</div>
+        <div class="profile-role">${u.email}</div>
+        <div class="profile-chips">
+          <span class="chip ${u.role==='admin'?'chip-rose':u.role==='provider'?'chip-amber':'chip-teal'}">${u.role==='admin'?'🛡️ Admin':u.role==='provider'?'🔧 Provider':'👤 Customer'}</span>
+          <span class="chip chip-ghost">📅 Joined ${formatDate(u.joinDate||new Date())}</span>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)" onclick="openEditProfile()">✏️ Edit</button>
+    </div>
+    <div class="grid-2">
+      <div class="card" style="padding:24px">
+        <div style="font-weight:700;margin-bottom:16px;font-size:.95rem">Account Details</div>
+        ${[['Full Name',u.name],['Email',u.email],['Phone',u.phone||'—'],['City',u.city||'—'],['Role',u.role]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:.87rem"><span style="color:var(--muted)">${k}</span><span style="font-weight:600">${v}</span></div>`).join('')}
+      </div>
+      <div class="card" style="padding:24px">
+        <div style="font-weight:700;margin-bottom:16px;font-size:.95rem">Activity Summary</div>
+        <div class="grid-2" style="gap:12px">
+          ${[['Bookings',S.bookings.length+2,'📋'],['Reviews',1,'⭐'],['Saved','3','❤️'],['Searches','12','🔍']].map(([l,v,ic])=>`<div style="padding:16px;background:var(--surface2);border-radius:var(--r);text-align:center"><div style="font-size:1.5rem;margin-bottom:4px">${ic}</div><div style="font-family:var(--font-head);font-weight:900;font-size:1.3rem">${v}</div><div style="font-size:.72rem;color:var(--muted)">${l}</div></div>`).join('')}
+        </div>
+        <div style="margin-top:16px;padding:14px;background:var(--teal-glow);border-radius:var(--r);font-size:.82rem;color:var(--teal-dark)">
+          📍 <strong>Last location:</strong> ${S.address}
+        </div>
+      </div>
+    </div>`;
+}
+function openEditProfile() {
+  const u = S.user;
+  showModal(`
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Edit Profile</div><button class="modal-close" onclick="closeModal()">×</button></div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field"><label>Full Name</label><input class="input" id="ep-name" value="${u.name}"/></div>
+          <div class="field"><label>Phone</label><input class="input" id="ep-phone" value="${u.phone||''}"/></div>
+        </div>
+        <div class="field"><label>City</label><input class="input" id="ep-city" value="${u.city||''}"/></div>
+        <button class="btn btn-primary btn-full" onclick="saveProfile()">Save Changes</button>
+      </div>
+    </div>`);
+}
+function saveProfile() {
+  S.user.name = document.getElementById('ep-name').value.trim() || S.user.name;
+  S.user.phone = document.getElementById('ep-phone').value.trim();
+  S.user.city = document.getElementById('ep-city').value.trim();
+  S.user.avatar = S.user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('topbar-avatar').textContent = S.user.avatar;
+  sessionStorage.setItem('ee_user', JSON.stringify(S.user));
+  closeModal(); toast('Profile updated!','success'); renderProfile();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROVIDER DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderProviderDashboard() {
+  const p = document.getElementById('page-prov-dashboard');
+  const u = S.user;
+  const isApproved = u.approved !== false;
+  p.innerHTML = `
+    ${!isApproved?`<div class="approval-pending fade-in">
+      <div style="font-size:1.8rem">⏳</div>
+      <div>
+        <div style="font-weight:700;color:var(--amber);margin-bottom:4px">Account Pending Approval</div>
+        <div style="font-size:.85rem;color:var(--muted)">Your provider account is being reviewed by our admin team. You'll be notified once approved and will appear in customer searches.</div>
+      </div>
+    </div>`:''}
+    <div class="profile-hero fade-in">
+      <div class="profile-avatar-xl">${u.avatar}</div>
+      <div class="profile-info">
+        <div class="profile-name">${u.name}</div>
+        <div class="profile-role">${u.serviceType||'Service'} Provider · ${u.city||'—'}</div>
+        <div class="profile-chips">
+          <span class="chip ${isApproved?'chip-green':'chip-amber'}">${isApproved?'✅ Verified':'⏳ Pending'}</span>
+          <span class="chip chip-ghost">₹${u.pricePerHour||299}/hr</span>
+          <span class="chip chip-teal">⭐ 4.8 avg</span>
+        </div>
+      </div>
+      <div class="toggle-avail" onclick="toggleAvailability(this)" id="avail-toggle">
+        <div class="toggle-switch ${S.providerAvailable?'on':''}" id="avail-switch"><div class="toggle-thumb"></div></div>
+        <span style="color:#fff;font-size:.85rem;font-weight:600" id="avail-label">${S.providerAvailable?'Available':'Offline'}</span>
+      </div>
+    </div>
+    <div class="metrics-grid fade-in">
+      <div class="card metric-card" data-icon="📋"><div class="metric-label">Total Jobs</div><div class="metric-value">47</div><div class="metric-sub"><span class="metric-up">↑ 3</span> this week</div></div>
+      <div class="card metric-card" data-icon="⭐"><div class="metric-label">Avg Rating</div><div class="metric-value">4.8</div><div class="metric-sub"><span class="metric-up">↑ 0.1</span> vs last month</div></div>
+      <div class="card metric-card" data-icon="₹"><div class="metric-label">Earnings (Month)</div><div class="metric-value">₹14,200</div><div class="metric-sub"><span class="metric-up">↑ 12%</span> vs last month</div></div>
+      <div class="card metric-card" data-icon="⏱"><div class="metric-label">Response Rate</div><div class="metric-value">96%</div><div class="metric-sub"><span class="metric-up">↑ 2%</span> improvement</div></div>
+    </div>
+    <div class="section-header">
+      <div><div class="section-title">Incoming Requests</div><div class="section-sub">2 pending requests</div></div>
+      <span class="section-action" onclick="navigateTo('prov-requests')">View all →</span>
+    </div>
+    ${renderJobCards(2)}`;
+}
+function toggleAvailability(btn) {
+  S.providerAvailable = !S.providerAvailable;
+  const sw = document.getElementById('avail-switch');
+  const lb = document.getElementById('avail-label');
+  sw.classList.toggle('on', S.providerAvailable);
+  lb.textContent = S.providerAvailable ? 'Available' : 'Offline';
+  toast(`You are now ${S.providerAvailable?'Available':'Offline'}`, S.providerAvailable?'success':'info');
+}
+function renderJobCards(limit=10) {
+  const jobs = [
+    {id:'j1',customer:'Demo Customer',avatar:'DC',service:'Engine Oil Change',address:'Uppal, Hyderabad',dist:'2.3 km',time:'2:00 PM',date:'Today',amount:450,status:'pending'},
+    {id:'j2',customer:'Arjun Reddy',avatar:'AR',service:'Brake Pad Replacement',address:'Kothapet, Hyderabad',dist:'3.1 km',time:'4:00 PM',date:'Today',amount:700,status:'pending'},
+    {id:'j3',customer:'Sunita Rao',avatar:'SR',service:'Car AC Service',address:'LB Nagar',dist:'4.5 km',time:'11:00 AM',date:'Tomorrow',amount:599,status:'accepted'},
+  ].slice(0,limit);
+  return jobs.map(j=>`
+    <div class="card job-card ${j.status}">
+      <div class="job-card-top">
+        <div class="job-customer">
+          <div class="job-customer-avatar">${j.avatar}</div>
+          <div>
+            <div style="font-weight:700;font-size:.9rem">${j.customer}</div>
+            <div style="font-size:.78rem;color:var(--muted)">${j.dist} away · ${j.time} · ${j.date}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-head);font-weight:900;font-size:1rem">₹${j.amount}</div>
+          <span class="chip ${j.status==='pending'?'chip-amber':'chip-green'}">${j.status}</span>
+        </div>
+      </div>
+      <div style="padding:10px;background:var(--surface2);border-radius:var(--r-sm);font-size:.85rem;margin-bottom:10px">
+        🔧 <strong>${j.service}</strong><br/><span style="color:var(--muted)">📍 ${j.address}</span>
+      </div>
+      ${j.status==='pending'?`<div class="job-actions">
+        <button class="btn btn-success" style="flex:1" onclick="respondJob('${j.id}','accept')">✓ Accept</button>
+        <button class="btn btn-danger btn-sm" onclick="respondJob('${j.id}','reject')">✗ Decline</button>
+        <button class="btn btn-outline btn-sm" onclick="navigateTo('chat')">💬 Chat</button>
+      </div>`:`<div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="toast('Navigating to customer','info')">📍 Get Directions</button><button class="btn btn-outline btn-sm" onclick="toast('Marked complete','success')">✓ Mark Complete</button></div>`}
+    </div>`).join('');
+}
+function respondJob(id, action) {
+  toast(action==='accept'?'Job accepted! Customer notified 🎉':'Job declined','${action==="accept"?"success":"info"}');
+  renderProviderDashboard();
+}
+function renderProviderRequests() {
+  document.getElementById('page-prov-requests').innerHTML = `
+    <div class="section-title" style="margin-bottom:24px">Job Requests</div>
+    ${renderJobCards(10)}`;
+}
+function renderProviderProfile() {
+  const u = S.user;
+  const p = document.getElementById('page-prov-profile');
+  p.innerHTML = `
+    <div class="section-title" style="margin-bottom:24px">Provider Profile</div>
+    <div class="card" style="padding:28px;margin-bottom:20px">
+      <div style="font-weight:700;margin-bottom:20px">Service Information</div>
+      <div class="field"><label>Service Type</label><select class="input" id="pp-service"><option ${u.serviceType==='Mechanic'?'selected':''}>Mechanic</option><option ${u.serviceType==='Plumber'?'selected':''}>Plumber</option></select></div>
+      <div class="field-row">
+        <div class="field"><label>Price per Hour (₹)</label><input class="input" id="pp-price" value="${u.pricePerHour||299}"/></div>
+        <div class="field"><label>Experience (years)</label><input class="input" id="pp-exp" value="5"/></div>
+      </div>
+      <div class="field"><label>Tags (comma separated)</label><input class="input" id="pp-tags" placeholder="Engine, AC Repair, Diagnostics" value="Engine, AC Repair"/></div>
+      <div class="field"><label>Bio</label><textarea class="input" id="pp-bio" rows="3" placeholder="Describe your expertise…">Certified mechanic with 8+ years handling engine, electrical, and AC systems for all car makes.</textarea></div>
+      <button class="btn btn-primary" onclick="saveProviderProfile()">Save Changes</button>
+    </div>
+    <div class="card" style="padding:28px">
+      <div style="font-weight:700;margin-bottom:20px">Service Area & Location</div>
+      <div style="height:250px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.9rem">
+        📍 Map will show your service radius
+      </div>
+      <div style="margin-top:12px;font-size:.85rem;color:var(--muted)">Your current location: <strong>${S.address}</strong></div>
+    </div>`;
+}
+function saveProviderProfile() { toast('Profile updated!','success'); }
+
+// ═══════════════════════════════════════════════════════════════
+//  ADMIN DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderAdminDashboard() {
+  const p = document.getElementById('page-admin-dashboard');
+  p.innerHTML = `
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--font-head);font-size:1.5rem;font-weight:900">Admin Dashboard 🛡️</div>
+      <div style="color:var(--muted);font-size:.88rem;margin-top:4px">Full platform oversight and control</div>
+    </div>
+    <div class="metrics-grid fade-in">
+      <div class="card metric-card" data-icon="👥"><div class="metric-label">Total Customers</div><div class="metric-value">1,248</div><div class="metric-sub"><span class="metric-up">↑ 24</span> this week</div></div>
+      <div class="card metric-card" data-icon="🔧"><div class="metric-label">Active Providers</div><div class="metric-value">87</div><div class="metric-sub"><span class="metric-up">↑ 3</span> new approved</div></div>
+      <div class="card metric-card" data-icon="📋"><div class="metric-label">Total Bookings</div><div class="metric-value">8,432</div><div class="metric-sub"><span class="metric-up">↑ 156</span> this week</div></div>
+      <div class="card metric-card" data-icon="⏳"><div class="metric-label">Pending Approvals</div><div class="metric-value" style="color:var(--amber)">4</div><div class="metric-sub" style="color:var(--amber)">Requires action</div></div>
+    </div>
+    <div class="section-header" style="margin-top:8px">
+      <div><div class="section-title">Pending Provider Approvals</div><div class="section-sub">Review and verify new providers</div></div>
+      <span class="section-action" onclick="navigateTo('admin-providers')">All providers →</span>
+    </div>
+    <div class="table-wrap fade-in" style="margin-bottom:24px">
+      <table>
+        <thead><tr><th>Provider</th><th>Service</th><th>City</th><th>Applied</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${MOCK_USERS.filter(u=>u.role==='provider'&&!u.approved).map(u=>`
+            <tr>
+              <td><div style="display:flex;align-items:center;gap:10px"><div class="table-avatar" style="background:linear-gradient(135deg,var(--teal),var(--teal-dark))">${u.avatar}</div><div><div style="font-weight:600">${u.name}</div><div style="font-size:.75rem;color:var(--muted)">${u.email}</div></div></div></td>
+              <td><span class="chip chip-teal">${u.serviceType||'—'}</span></td>
+              <td>${u.city||'—'}</td>
+              <td style="font-size:.82rem;color:var(--muted)">${formatDate(u.joinDate||new Date())}</td>
+              <td><div style="display:flex;gap:6px">
+                <button class="action-btn" style="background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:700;border:none;cursor:pointer" onclick="approveProvider('${u.id}')">✓ Approve</button>
+                <button class="action-btn" style="background:var(--rose-light);color:var(--rose);padding:5px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:700;border:none;cursor:pointer" onclick="rejectProvider('${u.id}')">✗ Reject</button>
+              </div></td>
+            </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">No pending approvals ✅</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <div class="section-header">
+      <div><div class="section-title">Recent Bookings</div></div>
+      <span class="section-action" onclick="navigateTo('admin-users')">All activity →</span>
+    </div>
+    <div class="table-wrap fade-in">
+      <table>
+        <thead><tr><th>Customer</th><th>Provider</th><th>Service</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          ${[['Demo Customer','Rajesh Kumar','Engine Repair','2025-04-01','₹850','completed'],['Arjun Reddy','Priya Sharma','Pipe Fix','2025-04-02','₹450','active'],['Sunita Rao','Amit Singh','AC Service','2025-04-03','₹599','pending']].map(([c,pr,sv,dt,am,st])=>`
+          <tr><td>${c}</td><td>${pr}</td><td>${sv}</td><td style="font-size:.82rem;color:var(--muted)">${formatDate(dt)}</td><td style="font-weight:700">${am}</td>
+          <td><span class="chip ${st==='completed'?'chip-green':st==='active'?'chip-teal':'chip-amber'}">${st}</span></td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+function approveProvider(id) {
+  const u = MOCK_USERS.find(x=>x.id===id);
+  if (u) u.approved = true;
+  toast('Provider approved! They will now appear in search results ✅','success');
+  renderAdminDashboard();
+}
+function rejectProvider(id) {
+  const idx = MOCK_USERS.findIndex(x=>x.id===id);
+  if (idx > -1) MOCK_USERS.splice(idx, 1);
+  toast('Provider rejected and removed','info');
+  renderAdminDashboard();
+}
+function renderAdminUsers() {
+  const p = document.getElementById('page-admin-users');
+  const customers = MOCK_USERS.filter(u=>u.role==='customer');
+  p.innerHTML = `
+    <div class="section-title" style="margin-bottom:24px">All Customers</div>
+    <div class="table-wrap fade-in">
+      <table>
+        <thead><tr><th>User</th><th>Email</th><th>Phone</th><th>City</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${customers.map(u=>`
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="table-avatar" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)">${u.avatar}</div><div style="font-weight:600">${u.name}</div></div></td>
+            <td style="font-size:.82rem;color:var(--muted)">${u.email}</td>
+            <td style="font-size:.82rem">${u.phone||'—'}</td>
+            <td style="font-size:.82rem">${u.city||'—'}</td>
+            <td style="font-size:.78rem;color:var(--muted)">${formatDate(u.joinDate||new Date())}</td>
+            <td><div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="toast('Viewing ${u.name}','info')">View</button>
+              <button class="btn btn-sm" style="background:var(--rose-light);color:var(--rose);border:none;padding:5px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:700;cursor:pointer" onclick="toast('User suspended (demo)','warning')">Suspend</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+function renderAdminProviders() {
+  const p = document.getElementById('page-admin-providers');
+  p.innerHTML = `
+    <div class="section-title" style="margin-bottom:24px">All Providers</div>
+    <div class="table-wrap fade-in">
+      <table>
+        <thead><tr><th>Provider</th><th>Service</th><th>Rating</th><th>Jobs</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${PROVIDERS.map(pr=>`
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="table-avatar ${pr.color}" style="background:linear-gradient(135deg,var(--teal,#00BFA5),var(--teal-dark,#009688))">${pr.initials}</div><div><div style="font-weight:600">${pr.name}</div><div style="font-size:.75rem;color:var(--muted)">${pr.role}</div></div></div></td>
+            <td><span class="chip chip-teal">${pr.type}</span></td>
+            <td><span style="color:#FBBF24">★</span> ${pr.rating}</td>
+            <td style="font-weight:700">${pr.jobs}</td>
+            <td><span class="chip ${pr.available?'chip-green':'chip-ghost'}">${pr.available?'Active':'Offline'}</span></td>
+            <td><div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="focusMapProvider('${pr.id}');navigateTo('map')">📍 Map</button>
+              <button class="btn btn-sm" style="background:var(--rose-light);color:var(--rose);border:none;padding:5px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:700;cursor:pointer" onclick="toast('Provider suspended (demo)','warning')">Suspend</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ADMIN API DOCS (MongoDB Integration Guide)
+// ═══════════════════════════════════════════════════════════════
+function renderAdminAPI() {
+  const p = document.getElementById('page-admin-api');
+  p.innerHTML = `
+    <div class="section-title" style="margin-bottom:6px">API Reference & MongoDB Setup</div>
+    <div style="color:var(--muted);font-size:.88rem;margin-bottom:28px">Full backend integration guide with Postman collection</div>
+
+    <div class="card" style="padding:24px;margin-bottom:20px;border-left:4px solid var(--teal)">
+      <div style="font-weight:800;font-size:1rem;margin-bottom:8px">🚀 Tech Stack</div>
+      <div class="grid-4" style="gap:12px;margin-top:12px">
+        ${[['Node.js','Backend Runtime','#68A063'],['Express.js','Web Framework','#404D59'],['MongoDB','Database','#4DB33D'],['Mongoose','ODM','#880000'],['JWT','Auth Tokens','#D63B53'],['bcryptjs','Password Hash','#764ABC'],['Leaflet.js','Maps (Free)','#199900'],['Postman','API Testing','#FF6C37']].map(([n,d,c])=>`<div style="padding:12px;background:var(--surface2);border-radius:var(--r-sm);text-align:center"><div style="font-weight:800;font-size:.85rem;color:${c}">${n}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px">${d}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div style="font-family:var(--font-head);font-weight:800;font-size:1rem;margin-bottom:16px">📡 API Endpoints</div>
+
+    <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Authentication</div>
+    ${[
+      ['POST','/api/auth/register','Register new user (customer/provider/admin)','{"name":"Rajesh","email":"r@e.com","password":"pass123","role":"customer","phone":"9876543210","city":"Hyderabad"}'],
+      ['POST','/api/auth/login','Login and get JWT token','{"email":"demo@ee.com","password":"demo123"}'],
+      ['GET','/api/auth/me','Get current user profile','Headers: Authorization: Bearer <token>'],
+    ].map(([m,ep,desc,body])=>renderAPIBlock(m,ep,desc,body)).join('')}
+
+    <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">Providers (Geo-location)</div>
+    ${[
+      ['GET','/api/providers?lat=17.385&lng=78.487&radius=10','Find nearby providers (MongoDB $near)','Query params: lat, lng, radius (km), type (Mechanic|Plumber)'],
+      ['GET','/api/providers/:id','Get single provider details',''],
+      ['PATCH','/api/providers/location','Update provider live GPS location','{"lat":17.385,"lng":78.487}'],
+      ['PATCH','/api/providers/availability','Toggle available/offline','{"isAvailable":true}'],
+    ].map(([m,ep,desc,body])=>renderAPIBlock(m,ep,desc,body)).join('')}
+
+    <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">Bookings</div>
+    ${[
+      ['POST','/api/bookings','Create new booking','{"providerId":"id","service":"Engine Repair","date":"2025-04-05","address":"123 St","description":"Oil leak"}'],
+      ['GET','/api/bookings','Get my bookings (customer or provider)',''],
+      ['PATCH','/api/bookings/:id/status','Update booking status','{"status":"accepted"} // pending|accepted|active|completed|cancelled'],
+      ['PATCH','/api/bookings/:id/cancel','Customer cancels booking',''],
+    ].map(([m,ep,desc,body])=>renderAPIBlock(m,ep,desc,body)).join('')}
+
+    <div style="font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">Admin</div>
+    ${[
+      ['GET','/api/admin/pending','Get providers awaiting approval','Admin auth required'],
+      ['PATCH','/api/admin/providers/:id/approve','Approve a provider','Admin auth required'],
+      ['DELETE','/api/admin/users/:id','Remove a user','Admin auth required'],
+      ['GET','/api/admin/stats','Platform statistics','Admin auth required'],
+    ].map(([m,ep,desc,body])=>renderAPIBlock(m,ep,desc,body)).join('')}
+
+    <div style="font-family:var(--font-head);font-weight:800;font-size:1rem;margin:28px 0 16px">🍃 MongoDB Setup</div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">Step 1 — Install dependencies</span></div>
+      <div class="api-code">npm init -y
+npm install express mongoose bcryptjs jsonwebtoken cors dotenv</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">.env file (create in /server)</span></div>
+      <div class="api-code">MONGO_URI=mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/expertease
+JWT_SECRET=your_super_secret_key_here
+PORT=5000
+CLIENT_URL=http://localhost:3000</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">MongoDB Atlas (Free) — Get your MONGO_URI</span></div>
+      <div class="api-code">1. Go to mongodb.com/atlas → Create free account
+2. Create M0 cluster (free, 512MB)
+3. Database Access → Add user with password
+4. Network Access → Allow 0.0.0.0/0
+5. Connect → Drivers → Copy connection string
+6. Replace &lt;password&gt; and paste into .env as MONGO_URI</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">MongoDB Geospatial Query (How nearby search works)</span></div>
+      <div class="api-code"><span style="color:#86EFAC">// Index required on User schema:</span>
+userSchema.index({ location: '2dsphere' });
+
+<span style="color:#86EFAC">// Find providers within 10km:</span>
+User.find({
+  role: 'provider', isVerified: true,
+  location: {
+    $near: {
+      $geometry: { type: 'Point', coordinates: [lng, lat] },
+      $maxDistance: 10000 <span style="color:#94A3B8">// metres</span>
+    }
+  }
+})</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">Postman — Import this collection</span></div>
+      <div class="api-code"><span style="color:#86EFAC">// Base URL variable in Postman:</span>
+{{BASE_URL}} = http://localhost:5000
+
+<span style="color:#86EFAC">// After login, save token:</span>
+<span style="color:#FCD34D">// Tests tab in login request:</span>
+const token = pm.response.json().token;
+pm.environment.set("TOKEN", token);
+
+<span style="color:#86EFAC">// Auth header for protected routes:</span>
+Authorization: Bearer {{TOKEN}}</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header"><span style="color:#A5F3FC;font-weight:700;font-size:.85rem">Replace frontend localStorage with real API calls</span></div>
+      <div class="api-code"><span style="color:#86EFAC">// BEFORE (simulation):</span>
+const user = MOCK_USERS.find(u => u.email === email);
+
+<span style="color:#86EFAC">// AFTER (real MongoDB via API):</span>
+const res = await fetch(\`\${BASE_URL}/api/auth/login\`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password })
+});
+const { token, user } = await res.json();
+localStorage.setItem('token', token);
+
+<span style="color:#86EFAC">// Protected API call:</span>
+const res = await fetch(\`\${BASE_URL}/api/providers?lat=\${lat}&lng=\${lng}&radius=10\`, {
+  headers: { Authorization: \`Bearer \${token}\` }
+});</div>
+    </div>
+    <div style="margin-top:24px;padding:20px;background:var(--green-light);border-radius:var(--r);border:1px solid rgba(16,185,129,.25)">
+      <div style="font-weight:700;color:var(--green);margin-bottom:8px">✅ Start the server</div>
+      <code style="font-family:monospace;font-size:.88rem;color:var(--ink)">cd server && node server.js<br/># ✅ MongoDB connected<br/># 🚀 ExpertEase running on http://localhost:5000</code>
+    </div>`;
+}
+function renderAPIBlock(method, endpoint, desc, body) {
+  const colors = {GET:'method-get',POST:'method-post',PATCH:'method-patch',DELETE:'method-delete'};
+  return `
+    <div class="api-block" style="margin-bottom:10px">
+      <div class="api-header">
+        <span class="method-badge ${colors[method]}">${method}</span>
+        <span class="api-endpoint">${endpoint}</span>
+        <span class="api-desc">${desc}</span>
+      </div>
+      ${body?`<div class="api-code">${body}</div>`:''}
+    </div>`;
+}
+
+// ═══════════════════════════ INIT ════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Small delay for aesthetic load
+  setTimeout(() => {
+    const saved = sessionStorage.getItem('ee_user');
+    if (saved && sessionStorage.getItem('ee_token')) {
+      // Skip location gate if already have session — still request location silently
+      try {
+        const u = JSON.parse(saved);
+        S.user = u; S.token = sessionStorage.getItem('ee_token');
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(pos=>{
+            S.location={lat:pos.coords.latitude,lng:pos.coords.longitude};
+            reverseGeocode(S.location);
+          }, useFallbackLocation, {timeout:5000});
+        } else useFallbackLocation();
+      } catch {}
+    }
+  }, 200);
+});
+</script>
+</body>
+</html>
