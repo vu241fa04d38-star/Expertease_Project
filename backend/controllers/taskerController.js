@@ -2,7 +2,7 @@ const User = require('../models/User');
 
 exports.getNearbyTaskers = async (req, res) => {
   try {
-    const { lat, lng, radius = 10, type } = req.query;
+    const { lat, lng, radius, type } = req.query;
     
     if (!lat || !lng) {
       return res.status(400).json({ success: false, message: 'Latitude and longitude required' });
@@ -11,14 +11,17 @@ exports.getNearbyTaskers = async (req, res) => {
     const query = {
       role: 'tasker',
       isApproved: true,
-      isAvailable: true,
       location: {
         $near: {
-          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseInt(radius) * 1000
+          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] }
         }
       }
     };
+
+    // Optional radius filter (in km). If omitted, return all taskers sorted by distance.
+    if (radius !== undefined && radius !== null && radius !== '' && Number(radius) > 0) {
+      query.location.$near.$maxDistance = Number(radius) * 1000;
+    }
 
     if (type) query.serviceType = type;
 

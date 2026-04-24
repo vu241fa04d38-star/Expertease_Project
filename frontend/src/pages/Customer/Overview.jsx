@@ -190,7 +190,7 @@ const Overview = () => {
       <div>
         <div className="flex justify-between items-end mb-4">
           <div>
-            <h2 className="text-xl font-black text-slate-900">Nearby Taskers</h2>
+            <h2 className="text-xl font-black text-slate-900">All Taskers</h2>
             <p className="text-sm text-slate-500 font-medium">Sorted by distance from you</p>
           </div>
           <button className="text-brand-600 font-bold text-sm hover:text-brand-700">View all →</button>
@@ -209,6 +209,7 @@ const Overview = () => {
               // Calculate dynamic distance and ETA based on actual coordinates
               let distanceStr = '-';
               let etaStr = '-';
+              const isAvailable = tasker.isAvailable === true;
               if (userLoc && tasker.location?.coordinates?.length >= 2) {
                 const dist = calculateDistance(userLoc.lat, userLoc.lng, tasker.location.coordinates[1], tasker.location.coordinates[0]);
                 if (dist) {
@@ -243,8 +244,13 @@ const Overview = () => {
 
                   {/* Skills/Tags */}
                   <div className="flex flex-wrap gap-2 mb-6">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-emerald-100">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Available
+                    <span className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                      isAvailable
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
+                      {isAvailable ? 'Available' : 'Offline'}
                     </span>
                     {Array.isArray(tasker.serviceType) ? tasker.serviceType.map(s => <span key={s} className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full">{s}</span>) : (tasker.serviceType && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full">{tasker.serviceType}</span>)}
                     {typeof tasker.skills === 'string' && tasker.skills.split(',').slice(0, 2).map((skill, idx) => (
