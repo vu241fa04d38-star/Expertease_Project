@@ -115,9 +115,9 @@ const Layout = () => {
 
   return (
     <>
-      <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
+      <div className="flex min-h-[100dvh] bg-slate-50 font-sans text-slate-900">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+      <div className="hidden md:flex md:w-64 bg-white border-r border-slate-200 flex-col">
         <div className="h-16 flex items-center px-5 border-b border-slate-100">
           <Logo size="md" theme="light" />
         </div>
@@ -161,10 +161,10 @@ const Layout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0">
           <div className="flex items-center space-x-2 text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
             <MapPin size={16} className="text-brand-500" />
-            <span className="max-w-[200px] truncate">{locationName}</span>
+            <span className="max-w-[140px] sm:max-w-[200px] truncate">{locationName}</span>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -176,6 +176,15 @@ const Layout = () => {
               title="Settings"
             >
               <Settings size={20} />
+            </button>
+
+            {/* Mobile Sign Out */}
+            <button
+              onClick={handleLogout}
+              className="md:hidden p-2 text-rose-500 hover:text-rose-600 transition-colors bg-rose-50 hover:bg-rose-100 rounded-full"
+              title="Sign Out"
+            >
+              <LogOut size={20} />
             </button>
 
             {/* Notification Bell */}
@@ -211,10 +220,37 @@ const Layout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-50">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8 bg-slate-50">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div
+          className="grid"
+          style={{ gridTemplateColumns: `repeat(${navItems[user.role].length}, minmax(0, 1fr))` }}
+        >
+          {navItems[user.role].map((item) => {
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+            return (
+              <button
+                key={`mobile-${item.path}`}
+                onClick={() => navigate(item.path)}
+                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors ${
+                  isActive ? 'text-brand-600 bg-brand-50' : 'text-slate-500'
+                }`}
+              >
+                {item.icon}
+                <span className="truncate max-w-full px-1">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
 
     {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
